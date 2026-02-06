@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title> قيد  - Qaed </title>
+  <style>
+    :root{
+      --bg:#0b0f14; --card:#101722; --muted:#93a4b8; --text:#e7eef8;
+      --border:rgba(255,255,255,.08); --soft:rgba(255,255,255,.06);
+      --accent:#4cc9f0; --ok:#2dd4bf; --bad:#fb7185; --warn:#fbbf24;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; padding:18px;
+      font-family: system-ui,-apple-system,"Segoe UI",Tahoma,Arial;
+      background: radial-gradient(1200px 600px at 50% -10%, rgba(76,201,240,.18), transparent 60%),
+                  radial-gradient(900px 500px at 0% 20%, rgba(45,212,191,.12), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+    }
+    a{color:inherit}
+    .wrap{max-width:980px; margin:0 auto; display:grid; gap:14px;}
+    .topbar{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+    .title{display:flex; flex-direction:column; gap:2px;}
+    .title h1{margin:0; font-size:20px; letter-spacing:.2px;}
+    .title p{margin:0; color:var(--muted); font-size:13px;}
+    .iconbtn{
+      width:40px; height:40px; border-radius:12px;
+      border:1px solid var(--border); background:var(--soft); color:var(--text);
+      cursor:pointer; font-size:18px; display:grid; place-items:center;
+    }
+    .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid var(--border); border-radius:18px; padding:14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    .teamHead{display:flex; align-items:flex-start; justify-content:space-between; gap:10px;}
+    .teamName{font-weight:900; font-size:16px;}
+    .bigScore{font-weight:950; font-size:34px; line-height:1; margin-top:6px;}
+    .remaining{color:var(--muted); font-size:13px; margin-top:6px;}
+    .remaining b{color:var(--text)}
+    .inputRow{display:grid; grid-template-columns:44px 1fr 44px; gap:10px; margin-top:12px;}
+    .stepBtn{
+      border-radius:14px; border:1px solid var(--border);
+      background:rgba(255,255,255,.05); color:var(--text); cursor:pointer;
+      font-size:20px; height:44px;
+    }
+    input[type="number"]{
+      width:100%; height:44px; border-radius:14px;
+      border:1px solid var(--border); background:rgba(0,0,0,.25); color:var(--text);
+      padding:0 12px; font-size:16px; outline:none;
+    }
+    input[type="number"]::placeholder{color:rgba(255,255,255,.35)}
+    .actions{
+      display:flex; gap:10px; flex-wrap:wrap;
+      justify-content:center; align-items:center;
+    }
+    .btn{
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      padding:10px 14px;
+      border-radius:14px;
+      cursor:pointer;
+      font-weight:800;
+    }
+    .btn.primary{border-color:rgba(76,201,240,.35); background:rgba(76,201,240,.12);}
+    .btn.danger{border-color:rgba(251,113,133,.35); background:rgba(251,113,133,.10);}
+    .btn.ghost{background:transparent}
+    .logHead{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      margin-bottom:10px;
+    }
+    .logHead h2{margin:0; font-size:16px;}
+    .badge{color:var(--muted); font-size:13px;}
+    table{width:100%; border-collapse:separate; border-spacing:0 8px;}
+    thead th{
+      text-align:right; font-size:12px; color:var(--muted); font-weight:800;
+      padding:0 10px;
+    }
+    tbody td{
+      background:rgba(255,255,255,.04);
+      border-top:1px solid var(--border);
+      border-bottom:1px solid var(--border);
+      padding:10px;
+      font-weight:700;
+    }
+    tbody td:first-child{border-right:1px solid var(--border); border-top-right-radius:12px; border-bottom-right-radius:12px;}
+    tbody td:last-child{border-left:1px solid var(--border); border-top-left-radius:12px; border-bottom-left-radius:12px;}
+    .muted{color:var(--muted); font-weight:600;}
+    .empty{
+      color:var(--muted); font-size:13px; padding:12px;
+      border:1px dashed rgba(255,255,255,.15); border-radius:14px;
+      background:rgba(255,255,255,.03);
+    }
+
+    /* Modals */
+    .overlay{
+      position:fixed; inset:0; background:rgba(0,0,0,.55);
+      display:none; align-items:center; justify-content:center; padding:18px;
+    }
+    .modal{
+      width:min(520px, 100%); border-radius:18px; padding:14px;
+      border:1px solid var(--border);
+      background: linear-gradient(180deg, rgba(16,23,34,.98), rgba(16,23,34,.92));
+      box-shadow: 0 18px 40px rgba(0,0,0,.5);
+    }
+    .modalTop{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+    .modalTop h3{margin:0; font-size:16px;}
+    .closeX{
+      width:36px; height:36px; border-radius:12px;
+      border:1px solid var(--border); background:rgba(255,255,255,.06); color:var(--text);
+      cursor:pointer; font-size:18px;
+    }
+    .field{margin:10px 0;}
+    label{display:block; margin:0 0 6px; font-weight:800; color:var(--muted); font-size:12px;}
+    .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+    .note{font-size:12px; color:var(--muted); line-height:1.6;}
+    .winnerBox{
+      text-align:center; padding:12px;
+      border-radius:16px; border:1px solid rgba(45,212,191,.28);
+      background: rgba(45,212,191,.10);
+      margin:10px 0 14px;
+    }
+    .winnerBox .who{font-size:20px; font-weight:950; margin-top:6px;}
+    .footerHint{color:rgba(255,255,255,.35); font-size:12px; text-align:center;}
+    @media (max-width:780px){
+      .grid2{grid-template-columns:1fr}
+      .actions{justify-content:stretch}
+      .btn{flex:1}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="title">
+        <h1> قيد  - Qaed </h1>
+        <p> — سجل الجولات — تراجع — هدف الفوز من الإعدادات</p>
+      </div>
+      <button class="iconbtn" id="settingsBtn" title="الإعدادات">⚙️</button>
+    </div>
+
+    <div class="grid2">
+      <div class="card" id="teamA">
+        <div class="teamHead">
+          <div>
+            <div class="teamName" id="nameA">لنا</div>
+            <div class="bigScore" id="scoreA">0</div>
+            <div class="remaining">باقي <b id="remainA">100</b> نقطة</div>
+          </div>
+        </div>
+
+        <div class="inputRow">
+          <button class="stepBtn" id="decA" aria-label="ناقص">−</button>
+          <input type="number" id="inputA" placeholder="نقاط الجولة لنا" min="0" step="1" />
+          <button class="stepBtn" id="incA" aria-label="زائد">+</button>
+        </div>
+      </div>
+
+      <div class="card" id="teamB">
+        <div class="teamHead">
+          <div>
+            <div class="teamName" id="nameB">لهم</div>
+            <div class="bigScore" id="scoreB">0</div>
+            <div class="remaining">باقي <b id="remainB">100</b> نقطة</div>
+          </div>
+        </div>
+
+        <div class="inputRow">
+          <button class="stepBtn" id="decB" aria-label="ناقص">−</button>
+          <input type="number" id="inputB" placeholder="نقاط الجولة لهم" min="0" step="1" />
+          <button class="stepBtn" id="incB" aria-label="زائد">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary" id="saveRoundBtn">تسجيل</button>
+      <button class="btn" id="undoBtn">تراجع</button>
+      <button class="btn danger" id="newGameBtn">جولة جديدة</button>
+    </div>
+
+    <div class="card">
+      <div class="logHead">
+        <h2>سجل الجولات</h2>
+        <div class="badge"><span id="roundCount">0</span> جولة</div>
+      </div>
+
+      <div id="logEmpty" class="empty">لا توجد جولات بعد</div>
+
+      <div style="overflow:auto;">
+        <table id="logTable" style="display:none;">
+          <thead>
+            <tr>
+              <th style="width:70px;">الجولة</th>
+              <th>لنا</th>
+              <th>لهم</th>
+              <th class="muted">ملاحظة</th>
+            </tr>
+          </thead>
+          <tbody id="logBody"></tbody>
+        </table>
+      </div>
+
+      <div class="footerHint">* هذه الحاسبة لتسجيل نقاط الجنجفه بشكل سريع (حسب اتفاقكم على نظام النقاط).</div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="overlay" id="settingsOverlay" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modalTop">
+        <h3>⚙️ الإعدادات</h3>
+        <button class="closeX" id="closeSettings" aria-label="إغلاق">✕</button>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>اسم الفريق الأول</label>
+          <input type="text" id="setNameA" placeholder="مثال: لنا" style="height:44px;border-radius:14px;border:1px solid var(--border);background:rgba(0,0,0,.25);color:var(--text);padding:0 12px;" />
+        </div>
+        <div class="field">
+          <label>اسم الفريق الثاني</label>
+          <input type="text" id="setNameB" placeholder="مثال: لهم" style="height:44px;border-radius:14px;border:1px solid var(--border);background:rgba(0,0,0,.25);color:var(--text);padding:0 12px;" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>عدد نقاط الفوز (الهدف)</label>
+        <input type="number" id="targetPoints" min="1" value="100" />
+        <div class="note">مثال شائع: 100 أو 150. أول فريق يوصل للهدف (أو يتعداه) يفوز.</div>
+      </div>
+
+      <div class="field">
+        <label>ملاحظات الجولة (اختياري)</label>
+        <input type="text" id="roundNote" placeholder="مثال: خسارة بجوكر / قيد عام / ... (يظهر عند التسجيل)" style="height:44px;border-radius:14px;border:1px solid var(--border);background:rgba(0,0,0,.25);color:var(--text);padding:0 12px;" />
+      </div>
+
+      <div class="actions" style="justify-content:flex-start;">
+        <button class="btn primary" id="saveSettingsBtn">حفظ</button>
+        <button class="btn ghost" id="resetAllBtn">تصفير كل شيء</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Winner Modal -->
+  <div class="overlay" id="winnerOverlay" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modalTop">
+        <h3 id="winnerTitle">الفائز!</h3>
+        <button class="closeX" id="closeWinner" aria-label="إغلاق">✕</button>
+      </div>
+
+      <div class="winnerBox">
+        <div class="muted">وصل الهدف</div>
+        <div class="who" id="winnerWho">—</div>
+        <div style="margin-top:8px" class="muted">
+          <span id="winnerAName">لنا</span>: <b id="winnerAScore">0</b> —
+          <span id="winnerBName">لهم</span>: <b id="winnerBScore">0</b>
+        </div>
+      </div>
+
+      <div class="actions" style="justify-content:flex-start;">
+        <button class="btn primary" id="winnerNewGameBtn">لعبة جديدة</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ====== State & Storage ======
+    const STORAGE_KEY = "jinjfa_score_v1";
+
+    // simple wrapper around storage with in-memory fallback for private mode/blocked storage
+    const storage = (()=>{
+      try{
+        const testKey = STORAGE_KEY + "_test";
+        localStorage.setItem(testKey, "1");
+        localStorage.removeItem(testKey);
+        return {
+          get: (k)=>localStorage.getItem(k),
+          set: (k,v)=>localStorage.setItem(k,v),
+          remove: (k)=>localStorage.removeItem(k)
+        };
+      }catch(err){
+        console.warn("Local storage unavailable, falling back to memory", err);
+        const mem = {};
+        return {
+          get: (k)=> (k in mem ? mem[k] : null),
+          set: (k,v)=>{ mem[k] = v; },
+          remove: (k)=>{ delete mem[k]; }
+        };
+      }
+    })();
+
+    const state = {
+      target: 100,
+      nameA: "لنا",
+      nameB: "لهم",
+      scoreA: 0,
+      scoreB: 0,
+      rounds: [] // {a,b,note,ts}
+    };
+
+    function loadState() {
+      try{
+        const raw = storage.get(STORAGE_KEY);
+        if(!raw) return;
+        const parsed = JSON.parse(raw);
+        if(typeof parsed === "object" && parsed){
+          Object.assign(state, parsed);
+          // sanitize
+          state.target = clampInt(state.target, 1, 100000);
+          state.scoreA = clampInt(state.scoreA, 0, 1000000);
+          state.scoreB = clampInt(state.scoreB, 0, 1000000);
+          state.rounds = Array.isArray(state.rounds) ? state.rounds : [];
+        }
+      }catch(e){
+        console.warn("Failed to load stored state", e);
+      }
+    }
+    function saveState(){
+      try{
+        storage.set(STORAGE_KEY, JSON.stringify(state));
+      }catch(e){
+        console.warn("Unable to persist state", e);
+      }
+    }
+
+    function clampInt(v, min, max){
+      const n = Number(v);
+      if(!Number.isFinite(n)) return min;
+      return Math.max(min, Math.min(max, Math.trunc(n)));
+    }
+
+    // ====== DOM ======
+    const $ = (id)=>document.getElementById(id);
+
+    const els = {
+      nameA: $("nameA"),
+      nameB: $("nameB"),
+      scoreA: $("scoreA"),
+      scoreB: $("scoreB"),
+      remainA: $("remainA"),
+      remainB: $("remainB"),
+      inputA: $("inputA"),
+      inputB: $("inputB"),
+      roundCount: $("roundCount"),
+      logEmpty: $("logEmpty"),
+      logTable: $("logTable"),
+      logBody: $("logBody"),
+
+      settingsOverlay: $("settingsOverlay"),
+      settingsBtn: $("settingsBtn"),
+      closeSettings: $("closeSettings"),
+      setNameA: $("setNameA"),
+      setNameB: $("setNameB"),
+      targetPoints: $("targetPoints"),
+      roundNote: $("roundNote"),
+      saveSettingsBtn: $("saveSettingsBtn"),
+      resetAllBtn: $("resetAllBtn"),
+
+      winnerOverlay: $("winnerOverlay"),
+      closeWinner: $("closeWinner"),
+      winnerWho: $("winnerWho"),
+      winnerAName: $("winnerAName"),
+      winnerBName: $("winnerBName"),
+      winnerAScore: $("winnerAScore"),
+      winnerBScore: $("winnerBScore"),
+      winnerTitle: $("winnerTitle"),
+      winnerNewGameBtn: $("winnerNewGameBtn"),
+
+      saveRoundBtn: $("saveRoundBtn"),
+      undoBtn: $("undoBtn"),
+      newGameBtn: $("newGameBtn"),
+
+      incA: $("incA"),
+      decA: $("decA"),
+      incB: $("incB"),
+      decB: $("decB"),
+    };
+
+    function fmt(n){ return String(clampInt(n,0,1e9)); }
+
+    function updateUI(){
+      els.nameA.textContent = state.nameA;
+      els.nameB.textContent = state.nameB;
+      els.scoreA.textContent = fmt(state.scoreA);
+      els.scoreB.textContent = fmt(state.scoreB);
+
+      const ra = Math.max(0, state.target - state.scoreA);
+      const rb = Math.max(0, state.target - state.scoreB);
+      els.remainA.textContent = fmt(ra);
+      els.remainB.textContent = fmt(rb);
+
+      // log
+      const count = state.rounds.length;
+      els.roundCount.textContent = fmt(count);
+
+      if(count === 0){
+        els.logEmpty.style.display = "block";
+        els.logTable.style.display = "none";
+      }else{
+        els.logEmpty.style.display = "none";
+        els.logTable.style.display = "table";
+      }
+
+      els.logBody.innerHTML = "";
+      state.rounds.slice().reverse().forEach((r, idxFromEnd)=>{
+        const roundIndex = count - idxFromEnd;
+        const tr = document.createElement("tr");
+
+        const td1 = document.createElement("td"); td1.textContent = roundIndex;
+        const td2 = document.createElement("td"); td2.textContent = fmt(r.a);
+        const td3 = document.createElement("td"); td3.textContent = fmt(r.b);
+        const td4 = document.createElement("td"); td4.textContent = r.note ? r.note : "—";
+        td4.className = "muted";
+
+        tr.append(td1, td2, td3, td4);
+        els.logBody.appendChild(tr);
+      });
+
+      // settings inputs reflect state
+      els.setNameA.value = state.nameA;
+      els.setNameB.value = state.nameB;
+      els.targetPoints.value = state.target;
+
+      // winner labels
+      els.winnerAName.textContent = state.nameA;
+      els.winnerBName.textContent = state.nameB;
+    }
+
+    function openSettings(){
+      els.settingsOverlay.style.display = "flex";
+      els.roundNote.value = "";
+    }
+    function closeSettings(){
+      els.settingsOverlay.style.display = "none";
+    }
+
+    function openWinner(who, isTie=false){
+      els.winnerTitle.textContent = isTie ? "تعادل" : "الفائز!";
+      els.winnerWho.textContent = who;
+      els.winnerAScore.textContent = fmt(state.scoreA);
+      els.winnerBScore.textContent = fmt(state.scoreB);
+      els.winnerOverlay.style.display = "flex";
+    }
+    function closeWinner(){
+      els.winnerOverlay.style.display = "none";
+    }
+
+    // ====== Actions ======
+    function stepInput(inputEl, delta){
+      const cur = clampInt(inputEl.value || 0, 0, 100000);
+      const next = Math.max(0, cur + delta);
+      inputEl.value = next;
+      inputEl.focus();
+    }
+
+    function registerRound(){
+      const a = clampInt(els.inputA.value || 0, 0, 100000);
+      const b = clampInt(els.inputB.value || 0, 0, 100000);
+
+      // Prevent empty round
+      if(a === 0 && b === 0){
+        // small UI nudge
+        els.inputA.focus();
+        return;
+      }
+
+      const note = (els.roundNote.value || "").trim();
+
+      state.scoreA += a;
+      state.scoreB += b;
+      state.rounds.push({ a, b, note, ts: Date.now() });
+
+      // clear inputs
+      els.inputA.value = "";
+      els.inputB.value = "";
+      els.roundNote.value = "";
+
+      saveState();
+      updateUI();
+      checkWinner();
+    }
+
+    function undoLast(){
+      const last = state.rounds.pop();
+      if(!last) return;
+      state.scoreA = Math.max(0, state.scoreA - clampInt(last.a,0,1e9));
+      state.scoreB = Math.max(0, state.scoreB - clampInt(last.b,0,1e9));
+      saveState();
+      updateUI();
+      checkWinner();
+    }
+
+    function newGame(confirmMsg=true){
+      if(confirmMsg && !confirm("هل أنت متأكد من بدء جولة جديدة؟")) return;
+      state.scoreA = 0;
+      state.scoreB = 0;
+      state.rounds = [];
+      els.inputA.value = "";
+      els.inputB.value = "";
+      els.roundNote.value = "";
+      saveState();
+      updateUI();
+      closeWinner();
+    }
+
+    function resetAll(){
+      if(!confirm("تأكيد: تصفير كل شيء (الأسماء + الهدف + السجل)؟")) return;
+      storage.remove(STORAGE_KEY);
+      state.target = 100;
+      state.nameA = "لنا";
+      state.nameB = "لهم";
+      state.scoreA = 0;
+      state.scoreB = 0;
+      state.rounds = [];
+      saveState();
+      updateUI();
+      closeSettings();
+      closeWinner();
+    }
+
+    function saveSettings(){
+      state.nameA = (els.setNameA.value || "لنا").trim() || "لنا";
+      state.nameB = (els.setNameB.value || "لهم").trim() || "لهم";
+      state.target = clampInt(els.targetPoints.value || 100, 1, 100000);
+      saveState();
+      updateUI();
+      closeSettings();
+      checkWinner();
+    }
+
+    function checkWinner(){
+      const hitA = state.scoreA >= state.target;
+      const hitB = state.scoreB >= state.target;
+      if(!hitA && !hitB){
+        closeWinner();
+        return;
+      }
+
+      let who = "";
+      let tie = false;
+      if(hitA && hitB){
+        if(state.scoreA > state.scoreB) who = state.nameA;
+        else if(state.scoreB > state.scoreA) who = state.nameB;
+        else { tie = true; who = "تعادل"; }
+      }else{
+        who = hitA ? state.nameA : state.nameB;
+      }
+      openWinner(who, tie);
+    }
+
+    // ====== Events ======
+    els.settingsBtn.addEventListener("click", openSettings);
+    els.closeSettings.addEventListener("click", closeSettings);
+    els.settingsOverlay.addEventListener("click", (e)=>{ if(e.target === els.settingsOverlay) closeSettings(); });
+    els.saveSettingsBtn.addEventListener("click", saveSettings);
+    els.resetAllBtn.addEventListener("click", resetAll);
+
+    els.saveRoundBtn.addEventListener("click", registerRound);
+    els.undoBtn.addEventListener("click", undoLast);
+    els.newGameBtn.addEventListener("click", ()=>newGame(true));
+
+    els.incA.addEventListener("click", ()=>stepInput(els.inputA, +1));
+    els.decA.addEventListener("click", ()=>stepInput(els.inputA, -1));
+    els.incB.addEventListener("click", ()=>stepInput(els.inputB, +1));
+    els.decB.addEventListener("click", ()=>stepInput(els.inputB, -1));
+
+    // Enter key to save
+    [els.inputA, els.inputB].forEach(inp=>{
+      inp.addEventListener("keydown", (e)=>{
+        if(e.key === "Enter"){
+          e.preventDefault();
+          registerRound();
+        }
+      });
+    });
+
+    els.closeWinner.addEventListener("click", closeWinner);
+    els.winnerOverlay.addEventListener("click", (e)=>{ if(e.target === els.winnerOverlay) closeWinner(); });
+    els.winnerNewGameBtn.addEventListener("click", ()=>newGame(false));
+
+    // ====== Init ======
+    loadState();
+    saveState();
+    updateUI();
+    checkWinner();
+  </script>
+</body>
+</html>

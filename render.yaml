@@ -1,0 +1,8 @@
+# Render deployment configuration for Qaed scorekeeper (static site)
+services:
+  - type: static
+    name: qaid-scorekeeper
+    rootDir: .
+    buildCommand: ""
+    staticPublishPath: .
+    pullRequestPreviewsEnabled: true
