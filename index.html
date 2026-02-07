@@ -155,7 +155,7 @@
 
         <div class="inputRow">
           <button class="stepBtn" id="decA" aria-label="ناقص">−</button>
-          <input type="number" id="inputA" placeholder="نقاط الجولة لنا" min="0" step="1" />
+          <input type="number" id="inputA" placeholder="نقاط الجولة لنا" min="-500" step="1" />
           <button class="stepBtn" id="incA" aria-label="زائد">+</button>
         </div>
       </div>
@@ -171,7 +171,7 @@
 
         <div class="inputRow">
           <button class="stepBtn" id="decB" aria-label="ناقص">−</button>
-          <input type="number" id="inputB" placeholder="نقاط الجولة لهم" min="0" step="1" />
+          <input type="number" id="inputB" placeholder="نقاط الجولة لهم" min="-500" step="1" />
           <button class="stepBtn" id="incB" aria-label="زائد">+</button>
         </div>
       </div>
@@ -181,6 +181,11 @@
       <button class="btn primary" id="saveRoundBtn">تسجيل</button>
       <button class="btn" id="undoBtn">تراجع</button>
       <button class="btn danger" id="newGameBtn">جولة جديدة</button>
+    </div>
+
+    <div class="field" style="margin:0 0 4px 0;">
+      <label>ملاحظة الجولة (اختياري)</label>
+      <input type="text" id="roundNoteInput" placeholder="مثال: خذوه بالبلوت / -20 في الهنود / قيد عام" style="height:44px;border-radius:14px;border:1px solid var(--border);background:rgba(0,0,0,.25);color:var(--text);padding:0 12px;width:100%;" />
     </div>
 
     <div class="card">
@@ -232,11 +237,6 @@
         <label>عدد نقاط الفوز (الهدف)</label>
         <input type="number" id="targetPoints" min="1" value="100" />
         <div class="note">مثال شائع: 100 أو 150. أول فريق يوصل للهدف (أو يتعداه) يفوز.</div>
-      </div>
-
-      <div class="field">
-        <label>ملاحظات الجولة (اختياري)</label>
-        <input type="text" id="roundNote" placeholder="مثال: خسارة بجوكر / قيد عام / ... (يظهر عند التسجيل)" style="height:44px;border-radius:14px;border:1px solid var(--border);background:rgba(0,0,0,.25);color:var(--text);padding:0 12px;" />
       </div>
 
       <div class="actions" style="justify-content:flex-start;">
@@ -313,8 +313,8 @@
           Object.assign(state, parsed);
           // sanitize
           state.target = clampInt(state.target, 1, 100000);
-          state.scoreA = clampInt(state.scoreA, 0, 1000000);
-          state.scoreB = clampInt(state.scoreB, 0, 1000000);
+          state.scoreA = clampInt(state.scoreA, -1000000, 1000000);
+          state.scoreB = clampInt(state.scoreB, -1000000, 1000000);
           state.rounds = Array.isArray(state.rounds) ? state.rounds : [];
         }
       }catch(e){
@@ -358,7 +358,7 @@
       setNameA: $("setNameA"),
       setNameB: $("setNameB"),
       targetPoints: $("targetPoints"),
-      roundNote: $("roundNote"),
+      roundNoteInput: $("roundNoteInput"),
       saveSettingsBtn: $("saveSettingsBtn"),
       resetAllBtn: $("resetAllBtn"),
 
@@ -382,7 +382,12 @@
       decB: $("decB"),
     };
 
-    function fmt(n){ return String(clampInt(n,0,1e9)); }
+    function fmt(n){
+      const num = Number(n);
+      if(!Number.isFinite(num)) return "0";
+      const bounded = Math.max(-1e9, Math.min(1e9, Math.trunc(num)));
+      return String(bounded);
+    }
 
     function updateUI(){
       els.nameA.textContent = state.nameA;
@@ -434,7 +439,6 @@
 
     function openSettings(){
       els.settingsOverlay.style.display = "flex";
-      els.roundNote.value = "";
     }
     function closeSettings(){
       els.settingsOverlay.style.display = "none";
@@ -453,15 +457,15 @@
 
     // ====== Actions ======
     function stepInput(inputEl, delta){
-      const cur = clampInt(inputEl.value || 0, 0, 100000);
-      const next = Math.max(0, cur + delta);
+      const cur = clampInt(inputEl.value || 0, -100000, 100000);
+      const next = cur + delta;
       inputEl.value = next;
       inputEl.focus();
     }
 
     function registerRound(){
-      const a = clampInt(els.inputA.value || 0, 0, 100000);
-      const b = clampInt(els.inputB.value || 0, 0, 100000);
+      const a = clampInt(els.inputA.value || 0, -100000, 100000);
+      const b = clampInt(els.inputB.value || 0, -100000, 100000);
 
       // Prevent empty round
       if(a === 0 && b === 0){
@@ -470,7 +474,7 @@
         return;
       }
 
-      const note = (els.roundNote.value || "").trim();
+      const note = (els.roundNoteInput.value || "").trim();
 
       state.scoreA += a;
       state.scoreB += b;
@@ -479,7 +483,7 @@
       // clear inputs
       els.inputA.value = "";
       els.inputB.value = "";
-      els.roundNote.value = "";
+      els.roundNoteInput.value = "";
 
       saveState();
       updateUI();
@@ -489,8 +493,8 @@
     function undoLast(){
       const last = state.rounds.pop();
       if(!last) return;
-      state.scoreA = Math.max(0, state.scoreA - clampInt(last.a,0,1e9));
-      state.scoreB = Math.max(0, state.scoreB - clampInt(last.b,0,1e9));
+      state.scoreA = state.scoreA - clampInt(last.a,-1e9,1e9);
+      state.scoreB = state.scoreB - clampInt(last.b,-1e9,1e9);
       saveState();
       updateUI();
       checkWinner();
@@ -503,7 +507,7 @@
       state.rounds = [];
       els.inputA.value = "";
       els.inputB.value = "";
-      els.roundNote.value = "";
+      els.roundNoteInput.value = "";
       saveState();
       updateUI();
       closeWinner();
