@@ -152,6 +152,7 @@
     <div class="modeToggle">
       <button class="modeBtn active" data-mode="teams" id="modeTeams">قيد فرق</button>
       <button class="modeBtn" data-mode="players" id="modePlayers">قيد لاعبين</button>
+      <button class="modeBtn" data-mode="solo" id="modeSolo">قيد فردي</button>
     </div>
 
     <div class="grid2">
@@ -316,10 +317,11 @@
     });
 
     const state = {
-      mode: "teams", // teams | players
+      mode: "teams", // teams | players | solo
       profiles: {
         teams: defaultProfile("لنا", "لهم"),
         players: defaultProfile("لاعب 1", "لاعب 2"),
+        solo: defaultProfile("أنا", "خصم"),
       }
     };
 
@@ -343,9 +345,10 @@
         const parsed = JSON.parse(raw);
         if(typeof parsed === "object" && parsed){
           if(parsed.profiles){
-            state.mode = parsed.mode === "players" ? "players" : "teams";
+            state.mode = ["teams","players","solo"].includes(parsed.mode) ? parsed.mode : "teams";
             state.profiles.teams = sanitizeProfile(parsed.profiles.teams || defaultProfile("لنا","لهم"));
             state.profiles.players = sanitizeProfile(parsed.profiles.players || defaultProfile("لاعب 1","لاعب 2"));
+            state.profiles.solo = sanitizeProfile(parsed.profiles.solo || defaultProfile("أنا","خصم"));
           }else{
             // legacy structure -> apply to teams, keep players default
             state.profiles.teams = sanitizeProfile(parsed);
@@ -388,6 +391,7 @@
 
       modeTeams: $("modeTeams"),
       modePlayers: $("modePlayers"),
+      modeSolo: $("modeSolo"),
       modeLabel: $("modeLabel"),
 
       settingsOverlay: $("settingsOverlay"),
@@ -480,7 +484,10 @@
       // mode buttons UI
       els.modeTeams.classList.toggle("active", state.mode === "teams");
       els.modePlayers.classList.toggle("active", state.mode === "players");
-      els.modeLabel.textContent = state.mode === "teams" ? "قيد فرق" : "قيد لاعبين";
+      els.modeSolo.classList.toggle("active", state.mode === "solo");
+      els.modeLabel.textContent =
+        state.mode === "teams" ? "قيد فرق" :
+        state.mode === "players" ? "قيد لاعبين" : "قيد فردي";
     }
 
     function openSettings(){
@@ -607,7 +614,7 @@
     }
 
     function switchMode(mode){
-      if(mode !== "teams" && mode !== "players") return;
+      if(mode !== "teams" && mode !== "players" && mode !== "solo") return;
       state.mode = mode;
       saveState();
       updateUI();
@@ -623,6 +630,7 @@
 
     els.modeTeams.addEventListener("click", ()=>switchMode("teams"));
     els.modePlayers.addEventListener("click", ()=>switchMode("players"));
+    els.modeSolo.addEventListener("click", ()=>switchMode("solo"));
 
     els.saveRoundBtn.addEventListener("click", registerRound);
     els.undoBtn.addEventListener("click", undoLast);
