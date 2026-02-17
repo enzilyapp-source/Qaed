@@ -37,6 +37,7 @@
       cursor:pointer; font-size:18px; display:grid; place-items:center;
     }
     .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+    .soloGrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px;}
     .card{
       background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
       border:1px solid var(--border); border-radius:18px; padding:14px;
@@ -155,7 +156,12 @@
       <button class="modeBtn" data-mode="solo" id="modeSolo">قيد فردي</button>
     </div>
 
-    <div class="grid2">
+    <div class="actions" id="soloControls" style="justify-content:flex-start; display:none;">
+      <button class="btn" id="addPlayerBtn">+ لاعب</button>
+      <button class="btn danger" id="removePlayerBtn">حذف آخر</button>
+    </div>
+
+    <div class="grid2" id="teamsGrid">
       <div class="card" id="teamA">
         <div class="teamHead">
           <div>
@@ -189,6 +195,8 @@
       </div>
     </div>
 
+    <div class="soloGrid" id="soloGrid" style="display:none;"></div>
+
     <div class="actions">
       <button class="btn primary" id="saveRoundBtn">تسجيل</button>
       <button class="btn" id="undoBtn">تراجع</button>
@@ -211,7 +219,7 @@
       <div style="overflow:auto;">
         <table id="logTable" style="display:none;">
           <thead>
-            <tr>
+            <tr id="logHeadRow">
               <th style="width:70px;">الجولة</th>
               <th>لنا</th>
               <th>لهم</th>
@@ -313,7 +321,8 @@
       nameB,
       scoreA: 0,
       scoreB: 0,
-      rounds: [] // {a,b,note,ts}
+      rounds: [], // {a,b,note,ts} or {scores:[{id,delta}],note,ts} for solo
+      players: []
     });
 
     const state = {
@@ -335,6 +344,20 @@
       p.scoreA = clampInt(p.scoreA, -1000000, 1000000);
       p.scoreB = clampInt(p.scoreB, -1000000, 1000000);
       p.rounds = Array.isArray(p.rounds) ? p.rounds : [];
+      p.players = Array.isArray(p.players) ? p.players : [];
+      if(p.players.length === 0){
+        p.players = [
+          { id: "p1", name: p.nameA || "لاعب 1", score: 0 },
+          { id: "p2", name: p.nameB || "لاعب 2", score: 0 },
+        ];
+      }
+      p.players = p.players.slice(0, 8).map((pl, idx)=>{
+        return {
+          id: pl.id || `p${idx+1}`,
+          name: (pl.name || `لاعب ${idx+1}`).trim() || `لاعب ${idx+1}`,
+          score: clampInt(pl.score || 0, -1000000, 1000000)
+        };
+      });
       return p;
     }
 
@@ -388,11 +411,17 @@
       logEmpty: $("logEmpty"),
       logTable: $("logTable"),
       logBody: $("logBody"),
+      logHeadRow: $("logHeadRow"),
 
       modeTeams: $("modeTeams"),
       modePlayers: $("modePlayers"),
       modeSolo: $("modeSolo"),
       modeLabel: $("modeLabel"),
+      teamsGrid: $("teamsGrid"),
+      soloGrid: $("soloGrid"),
+      soloControls: $("soloControls"),
+      addPlayerBtn: $("addPlayerBtn"),
+      removePlayerBtn: $("removePlayerBtn"),
 
       settingsOverlay: $("settingsOverlay"),
       settingsBtn: $("settingsBtn"),
@@ -431,19 +460,108 @@
       return String(bounded);
     }
 
+    function renderSoloCards(cp){
+      els.soloGrid.innerHTML = "";
+      cp.players.forEach((p, idx)=>{
+        const card = document.createElement("div");
+        card.className = "card";
+        const remain = Math.max(0, cp.target - p.score);
+        card.innerHTML = `
+          <div class="teamHead">
+            <div>
+              <div class="teamName">${p.name}</div>
+              <div class="bigScore">${fmt(p.score)}</div>
+              <div class="remaining">باقي <b>${fmt(remain)}</b> نقطة</div>
+            </div>
+          </div>
+          <div class="inputRow">
+            <button class="stepBtn solo-dec" aria-label="ناقص">−</button>
+            <input type="number" class="soloInput" data-player-id="${p.id}" placeholder="نقاط الجولة" min="-500" step="1" />
+            <button class="stepBtn solo-inc" aria-label="زائد">+</button>
+          </div>
+        `;
+        const input = card.querySelector("input");
+        const inc = card.querySelector(".solo-inc");
+        const dec = card.querySelector(".solo-dec");
+        inc.addEventListener("click", ()=>stepInput(input, +1));
+        dec.addEventListener("click", ()=>stepInput(input, -1));
+        els.soloGrid.appendChild(card);
+      });
+    }
+
+    function renderLog(cp, isSolo){
+      const head = els.logHeadRow;
+      head.innerHTML = "";
+      if(isSolo){
+        const thRound = document.createElement("th"); thRound.style.width = "70px"; thRound.textContent = "الجولة";
+        head.appendChild(thRound);
+        cp.players.forEach(p=>{
+          const th = document.createElement("th"); th.textContent = p.name;
+          head.appendChild(th);
+        });
+        const thNote = document.createElement("th"); thNote.className = "muted"; thNote.textContent = "ملاحظة";
+        head.appendChild(thNote);
+      }else{
+        head.innerHTML = `
+          <th style="width:70px;">الجولة</th>
+          <th>لنا</th>
+          <th>لهم</th>
+          <th class="muted">ملاحظة</th>
+        `;
+      }
+
+      els.logBody.innerHTML = "";
+      const count = cp.rounds.length;
+      cp.rounds.slice().reverse().forEach((r, idxFromEnd)=>{
+        const roundIndex = count - idxFromEnd;
+        const tr = document.createElement("tr");
+
+        const tdRound = document.createElement("td"); tdRound.textContent = roundIndex;
+        tr.appendChild(tdRound);
+
+        if(isSolo){
+          cp.players.forEach(p=>{
+            const td = document.createElement("td");
+            const delta = (r.scores || []).find(s=>s.id === p.id)?.delta || 0;
+            td.textContent = fmt(delta);
+            tr.appendChild(td);
+          });
+        }else{
+          const td2 = document.createElement("td"); td2.textContent = fmt(r.a);
+          const td3 = document.createElement("td"); td3.textContent = fmt(r.b);
+          tr.append(td2, td3);
+        }
+
+        const tdNote = document.createElement("td"); tdNote.textContent = r.note ? r.note : "—"; tdNote.className = "muted";
+        tr.appendChild(tdNote);
+
+        els.logBody.appendChild(tr);
+      });
+    }
+
     function updateUI(){
       const cp = currentProfile();
+      const isSolo = state.mode === "solo";
 
-      // header + scores
-      els.nameA.textContent = cp.nameA;
-      els.nameB.textContent = cp.nameB;
-      els.scoreA.textContent = fmt(cp.scoreA);
-      els.scoreB.textContent = fmt(cp.scoreB);
+      // toggle layouts
+      els.teamsGrid.style.display = isSolo ? "none" : "grid";
+      els.soloGrid.style.display = isSolo ? "grid" : "none";
+      els.soloControls.style.display = isSolo ? "flex" : "none";
 
-      const ra = Math.max(0, cp.target - cp.scoreA);
-      const rb = Math.max(0, cp.target - cp.scoreB);
-      els.remainA.textContent = fmt(ra);
-      els.remainB.textContent = fmt(rb);
+      if(!isSolo){
+        // header + scores for two-sides modes
+        els.nameA.textContent = cp.nameA;
+        els.nameB.textContent = cp.nameB;
+        els.scoreA.textContent = fmt(cp.scoreA);
+        els.scoreB.textContent = fmt(cp.scoreB);
+
+        const ra = Math.max(0, cp.target - cp.scoreA);
+        const rb = Math.max(0, cp.target - cp.scoreB);
+        els.remainA.textContent = fmt(ra);
+        els.remainB.textContent = fmt(rb);
+      }else{
+        renderSoloCards(cp);
+      }
 
       // log
       const count = cp.rounds.length;
@@ -457,20 +575,7 @@
         els.logTable.style.display = "table";
       }
 
-      els.logBody.innerHTML = "";
-      cp.rounds.slice().reverse().forEach((r, idxFromEnd)=>{
-        const roundIndex = count - idxFromEnd;
-        const tr = document.createElement("tr");
-
-        const td1 = document.createElement("td"); td1.textContent = roundIndex;
-        const td2 = document.createElement("td"); td2.textContent = fmt(r.a);
-        const td3 = document.createElement("td"); td3.textContent = fmt(r.b);
-        const td4 = document.createElement("td"); td4.textContent = r.note ? r.note : "—";
-        td4.className = "muted";
-
-        tr.append(td1, td2, td3, td4);
-        els.logBody.appendChild(tr);
-      });
+      renderLog(cp, isSolo);
 
       // settings inputs reflect state
       els.setNameA.value = cp.nameA;
@@ -478,8 +583,13 @@
       els.targetPoints.value = cp.target;
 
       // winner labels
-      els.winnerAName.textContent = cp.nameA;
-      els.winnerBName.textContent = cp.nameB;
+      if(!isSolo){
+        els.winnerAName.textContent = cp.nameA;
+        els.winnerBName.textContent = cp.nameB;
+      }else{
+        els.winnerAName.textContent = "الأعلى";
+        els.winnerBName.textContent = "الهدف";
+      }
 
       // mode buttons UI
       els.modeTeams.classList.toggle("active", state.mode === "teams");
@@ -501,8 +611,14 @@
       els.winnerTitle.textContent = isTie ? "تعادل" : "الفائز!";
       els.winnerWho.textContent = who;
       const cp = currentProfile();
-      els.winnerAScore.textContent = fmt(cp.scoreA);
-      els.winnerBScore.textContent = fmt(cp.scoreB);
+      if(state.mode === "solo"){
+        const top = cp.players.reduce((best,p)=> p.score > (best?.score ?? -Infinity) ? p : best, null);
+        els.winnerAScore.textContent = fmt(top?.score ?? 0);
+        els.winnerBScore.textContent = fmt(cp.target);
+      }else{
+        els.winnerAScore.textContent = fmt(cp.scoreA);
+        els.winnerBScore.textContent = fmt(cp.scoreB);
+      }
       els.winnerOverlay.style.display = "flex";
     }
     function closeWinner(){
@@ -521,24 +637,43 @@
       const a = clampInt(els.inputA.value || 0, -100000, 100000);
       const b = clampInt(els.inputB.value || 0, -100000, 100000);
       const cp = currentProfile();
+      const isSolo = state.mode === "solo";
 
-      // Prevent empty round
-      if(a === 0 && b === 0){
-        // small UI nudge
-        els.inputA.focus();
-        return;
+      let note = (els.roundNoteInput.value || "").trim();
+
+      if(isSolo){
+        const inputs = Array.from(els.soloGrid.querySelectorAll("input.soloInput"));
+        const deltas = inputs.map(inp=>{
+          const delta = clampInt(inp.value || 0, -100000, 100000);
+          return { id: inp.dataset.playerId, delta };
+        });
+        const nonZero = deltas.some(d=>d.delta !== 0);
+        if(!nonZero){
+          if(inputs[0]) inputs[0].focus();
+          return;
+        }
+        deltas.forEach(d=>{
+          const player = cp.players.find(p=>p.id === d.id);
+          if(player) player.score += d.delta;
+        });
+        cp.rounds.push({ scores: deltas, note, ts: Date.now() });
+      }else{
+        // Prevent empty round
+        if(a === 0 && b === 0){
+          // small UI nudge
+          els.inputA.focus();
+          return;
+        }
+        cp.scoreA += a;
+        cp.scoreB += b;
+        cp.rounds.push({ a, b, note, ts: Date.now() });
       }
-
-      const note = (els.roundNoteInput.value || "").trim();
-
-      cp.scoreA += a;
-      cp.scoreB += b;
-      cp.rounds.push({ a, b, note, ts: Date.now() });
 
       // clear inputs
       els.inputA.value = "";
       els.inputB.value = "";
       els.roundNoteInput.value = "";
+      els.soloGrid.querySelectorAll("input.soloInput").forEach(inp=> inp.value = "");
 
       saveState();
       updateUI();
@@ -549,8 +684,15 @@
       const cp = currentProfile();
       const last = cp.rounds.pop();
       if(!last) return;
-      cp.scoreA = cp.scoreA - clampInt(last.a,-1e9,1e9);
-      cp.scoreB = cp.scoreB - clampInt(last.b,-1e9,1e9);
+      if(state.mode === "solo"){
+        (last.scores || []).forEach(s=>{
+          const player = cp.players.find(p=>p.id === s.id);
+          if(player) player.score -= clampInt(s.delta || 0, -1e9, 1e9);
+        });
+      }else{
+        cp.scoreA = cp.scoreA - clampInt(last.a,-1e9,1e9);
+        cp.scoreB = cp.scoreB - clampInt(last.b,-1e9,1e9);
+      }
       saveState();
       updateUI();
       checkWinner();
@@ -559,9 +701,14 @@
     function newGame(confirmMsg=true){
       const cp = currentProfile();
       if(confirmMsg && !confirm("هل أنت متأكد من بدء جولة جديدة؟")) return;
-      cp.scoreA = 0;
-      cp.scoreB = 0;
-      cp.rounds = [];
+      if(state.mode === "solo"){
+        cp.players.forEach(p=>{ p.score = 0; });
+        cp.rounds = [];
+      }else{
+        cp.scoreA = 0;
+        cp.scoreB = 0;
+        cp.rounds = [];
+      }
       els.inputA.value = "";
       els.inputB.value = "";
       els.roundNoteInput.value = "";
@@ -573,8 +720,9 @@
     function resetAll(){
       if(!confirm("تأكيد: تصفير كل شيء (الأسماء + الهدف + السجل)؟")) return;
       storage.remove(STORAGE_KEY);
-      state.profiles.teams = defaultProfile("لنا","لهم");
-      state.profiles.players = defaultProfile("لاعب 1","لاعب 2");
+      state.profiles.teams = sanitizeProfile(defaultProfile("لنا","لهم"));
+      state.profiles.players = sanitizeProfile(defaultProfile("لاعب 1","لاعب 2"));
+      state.profiles.solo = sanitizeProfile(defaultProfile("أنا","خصم"));
       saveState();
       updateUI();
       closeSettings();
@@ -586,6 +734,10 @@
       cp.nameA = (els.setNameA.value || "لنا").trim() || "لنا";
       cp.nameB = (els.setNameB.value || "لهم").trim() || "لهم";
       cp.target = clampInt(els.targetPoints.value || 100, 1, 100000);
+      if(state.mode === "solo"){
+        if(cp.players[0]) cp.players[0].name = cp.nameA;
+        if(cp.players[1]) cp.players[1].name = cp.nameB;
+      }
       saveState();
       updateUI();
       closeSettings();
@@ -594,28 +746,67 @@
 
     function checkWinner(){
       const cp = currentProfile();
-      const hitA = cp.scoreA >= cp.target;
-      const hitB = cp.scoreB >= cp.target;
-      if(!hitA && !hitB){
-        closeWinner();
-        return;
-      }
-
-      let who = "";
-      let tie = false;
-      if(hitA && hitB){
-        if(cp.scoreA > cp.scoreB) who = cp.nameA;
-        else if(cp.scoreB > cp.scoreA) who = cp.nameB;
-        else { tie = true; who = "تعادل"; }
+      if(state.mode === "solo"){
+        const reached = cp.players.filter(p=>p.score >= cp.target);
+        if(reached.length === 0){
+          closeWinner();
+          return;
+        }
+        let best = reached[0];
+        let tie = false;
+        reached.forEach(p=>{
+          if(p.score > best.score){ best = p; tie = false; }
+          else if(p.score === best.score && p.id !== best.id){ tie = true; }
+        });
+        const who = tie ? "تعادل" : best.name;
+        // show top score vs الهدف
+        els.winnerAName.textContent = tie ? "تعادل" : best.name;
+        els.winnerAScore.textContent = fmt(tie ? cp.target : best.score);
+        els.winnerBName.textContent = "الهدف";
+        els.winnerBScore.textContent = fmt(cp.target);
+        openWinner(who, tie);
       }else{
-        who = hitA ? cp.nameA : cp.nameB;
+        const hitA = cp.scoreA >= cp.target;
+        const hitB = cp.scoreB >= cp.target;
+        if(!hitA && !hitB){
+          closeWinner();
+          return;
+        }
+
+        let who = "";
+        let tie = false;
+        if(hitA && hitB){
+          if(cp.scoreA > cp.scoreB) who = cp.nameA;
+          else if(cp.scoreB > cp.scoreA) who = cp.nameB;
+          else { tie = true; who = "تعادل"; }
+        }else{
+          who = hitA ? cp.nameA : cp.nameB;
+        }
+        openWinner(who, tie);
       }
-      openWinner(who, tie);
     }
 
     function switchMode(mode){
       if(mode !== "teams" && mode !== "players" && mode !== "solo") return;
       state.mode = mode;
+      saveState();
+      updateUI();
+      checkWinner();
+    }
+
+    function addSoloPlayer(){
+      const cp = state.profiles.solo;
+      if(cp.players.length >= 8) return;
+      const idx = cp.players.length + 1;
+      cp.players.push({ id: `p${Date.now()}${idx}`, name: `لاعب ${idx}`, score: 0 });
+      saveState();
+      updateUI();
+    }
+
+    function removeSoloPlayer(){
+      const cp = state.profiles.solo;
+      if(cp.players.length <= 2) return;
+      cp.players.pop();
       saveState();
       updateUI();
       checkWinner();
@@ -631,6 +822,8 @@
     els.modeTeams.addEventListener("click", ()=>switchMode("teams"));
     els.modePlayers.addEventListener("click", ()=>switchMode("players"));
     els.modeSolo.addEventListener("click", ()=>switchMode("solo"));
+    els.addPlayerBtn.addEventListener("click", addSoloPlayer);
+    els.removePlayerBtn.addEventListener("click", removeSoloPlayer);
 
     els.saveRoundBtn.addEventListener("click", registerRound);
     els.undoBtn.addEventListener("click", undoLast);
@@ -657,6 +850,9 @@
 
     // ====== Init ======
     loadState();
+    state.profiles.teams = sanitizeProfile(state.profiles.teams);
+    state.profiles.players = sanitizeProfile(state.profiles.players);
+    state.profiles.solo = sanitizeProfile(state.profiles.solo);
     saveState();
     updateUI();
     checkWinner();
