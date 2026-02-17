@@ -25,6 +25,12 @@
     .title{display:flex; flex-direction:column; gap:2px;}
     .title h1{margin:0; font-size:20px; letter-spacing:.2px;}
     .title p{margin:0; color:var(--muted); font-size:13px;}
+    .modeToggle{display:flex; gap:8px; flex-wrap:wrap; margin:4px 0 6px;}
+    .modeBtn{
+      border:1px solid var(--border); background:rgba(255,255,255,.04); color:var(--text);
+      padding:8px 12px; border-radius:12px; cursor:pointer; font-weight:800; font-size:13px;
+    }
+    .modeBtn.active{border-color:rgba(76,201,240,.45); background:rgba(76,201,240,.12); color:var(--accent);}
     .iconbtn{
       width:40px; height:40px; border-radius:12px;
       border:1px solid var(--border); background:var(--soft); color:var(--text);
@@ -141,6 +147,11 @@
         <p> — سجل الجولات — تراجع — هدف الفوز من الإعدادات</p>
       </div>
       <button class="iconbtn" id="settingsBtn" title="الإعدادات">⚙️</button>
+    </div>
+
+    <div class="modeToggle">
+      <button class="modeBtn active" data-mode="teams" id="modeTeams">قيد فرق</button>
+      <button class="modeBtn" data-mode="players" id="modePlayers">قيد لاعبين</button>
     </div>
 
     <div class="grid2">
@@ -295,14 +306,35 @@
       }
     })();
 
-    const state = {
+    const defaultProfile = (nameA="لنا", nameB="لهم")=>({
       target: 100,
-      nameA: "لنا",
-      nameB: "لهم",
+      nameA,
+      nameB,
       scoreA: 0,
       scoreB: 0,
       rounds: [] // {a,b,note,ts}
+    });
+
+    const state = {
+      mode: "teams", // teams | players
+      profiles: {
+        teams: defaultProfile("لنا", "لهم"),
+        players: defaultProfile("لاعب 1", "لاعب 2"),
+      }
     };
+
+    function currentProfile(){ return state.profiles[state.mode]; }
+
+    function sanitizeProfile(p){
+      if(!p || typeof p !== "object") return defaultProfile();
+      p.target = clampInt(p.target, 1, 100000);
+      p.nameA = (p.nameA || "").trim() || "لنا";
+      p.nameB = (p.nameB || "").trim() || "لهم";
+      p.scoreA = clampInt(p.scoreA, -1000000, 1000000);
+      p.scoreB = clampInt(p.scoreB, -1000000, 1000000);
+      p.rounds = Array.isArray(p.rounds) ? p.rounds : [];
+      return p;
+    }
 
     function loadState() {
       try{
@@ -310,12 +342,14 @@
         if(!raw) return;
         const parsed = JSON.parse(raw);
         if(typeof parsed === "object" && parsed){
-          Object.assign(state, parsed);
-          // sanitize
-          state.target = clampInt(state.target, 1, 100000);
-          state.scoreA = clampInt(state.scoreA, -1000000, 1000000);
-          state.scoreB = clampInt(state.scoreB, -1000000, 1000000);
-          state.rounds = Array.isArray(state.rounds) ? state.rounds : [];
+          if(parsed.profiles){
+            state.mode = parsed.mode === "players" ? "players" : "teams";
+            state.profiles.teams = sanitizeProfile(parsed.profiles.teams || defaultProfile("لنا","لهم"));
+            state.profiles.players = sanitizeProfile(parsed.profiles.players || defaultProfile("لاعب 1","لاعب 2"));
+          }else{
+            // legacy structure -> apply to teams, keep players default
+            state.profiles.teams = sanitizeProfile(parsed);
+          }
         }
       }catch(e){
         console.warn("Failed to load stored state", e);
@@ -351,6 +385,9 @@
       logEmpty: $("logEmpty"),
       logTable: $("logTable"),
       logBody: $("logBody"),
+
+      modeTeams: $("modeTeams"),
+      modePlayers: $("modePlayers"),
 
       settingsOverlay: $("settingsOverlay"),
       settingsBtn: $("settingsBtn"),
@@ -390,18 +427,21 @@
     }
 
     function updateUI(){
-      els.nameA.textContent = state.nameA;
-      els.nameB.textContent = state.nameB;
-      els.scoreA.textContent = fmt(state.scoreA);
-      els.scoreB.textContent = fmt(state.scoreB);
+      const cp = currentProfile();
 
-      const ra = Math.max(0, state.target - state.scoreA);
-      const rb = Math.max(0, state.target - state.scoreB);
+      // header + scores
+      els.nameA.textContent = cp.nameA;
+      els.nameB.textContent = cp.nameB;
+      els.scoreA.textContent = fmt(cp.scoreA);
+      els.scoreB.textContent = fmt(cp.scoreB);
+
+      const ra = Math.max(0, cp.target - cp.scoreA);
+      const rb = Math.max(0, cp.target - cp.scoreB);
       els.remainA.textContent = fmt(ra);
       els.remainB.textContent = fmt(rb);
 
       // log
-      const count = state.rounds.length;
+      const count = cp.rounds.length;
       els.roundCount.textContent = fmt(count);
 
       if(count === 0){
@@ -413,7 +453,7 @@
       }
 
       els.logBody.innerHTML = "";
-      state.rounds.slice().reverse().forEach((r, idxFromEnd)=>{
+      cp.rounds.slice().reverse().forEach((r, idxFromEnd)=>{
         const roundIndex = count - idxFromEnd;
         const tr = document.createElement("tr");
 
@@ -428,13 +468,17 @@
       });
 
       // settings inputs reflect state
-      els.setNameA.value = state.nameA;
-      els.setNameB.value = state.nameB;
-      els.targetPoints.value = state.target;
+      els.setNameA.value = cp.nameA;
+      els.setNameB.value = cp.nameB;
+      els.targetPoints.value = cp.target;
 
       // winner labels
-      els.winnerAName.textContent = state.nameA;
-      els.winnerBName.textContent = state.nameB;
+      els.winnerAName.textContent = cp.nameA;
+      els.winnerBName.textContent = cp.nameB;
+
+      // mode buttons UI
+      els.modeTeams.classList.toggle("active", state.mode === "teams");
+      els.modePlayers.classList.toggle("active", state.mode === "players");
     }
 
     function openSettings(){
@@ -447,8 +491,9 @@
     function openWinner(who, isTie=false){
       els.winnerTitle.textContent = isTie ? "تعادل" : "الفائز!";
       els.winnerWho.textContent = who;
-      els.winnerAScore.textContent = fmt(state.scoreA);
-      els.winnerBScore.textContent = fmt(state.scoreB);
+      const cp = currentProfile();
+      els.winnerAScore.textContent = fmt(cp.scoreA);
+      els.winnerBScore.textContent = fmt(cp.scoreB);
       els.winnerOverlay.style.display = "flex";
     }
     function closeWinner(){
@@ -466,6 +511,7 @@
     function registerRound(){
       const a = clampInt(els.inputA.value || 0, -100000, 100000);
       const b = clampInt(els.inputB.value || 0, -100000, 100000);
+      const cp = currentProfile();
 
       // Prevent empty round
       if(a === 0 && b === 0){
@@ -476,9 +522,9 @@
 
       const note = (els.roundNoteInput.value || "").trim();
 
-      state.scoreA += a;
-      state.scoreB += b;
-      state.rounds.push({ a, b, note, ts: Date.now() });
+      cp.scoreA += a;
+      cp.scoreB += b;
+      cp.rounds.push({ a, b, note, ts: Date.now() });
 
       // clear inputs
       els.inputA.value = "";
@@ -491,20 +537,22 @@
     }
 
     function undoLast(){
-      const last = state.rounds.pop();
+      const cp = currentProfile();
+      const last = cp.rounds.pop();
       if(!last) return;
-      state.scoreA = state.scoreA - clampInt(last.a,-1e9,1e9);
-      state.scoreB = state.scoreB - clampInt(last.b,-1e9,1e9);
+      cp.scoreA = cp.scoreA - clampInt(last.a,-1e9,1e9);
+      cp.scoreB = cp.scoreB - clampInt(last.b,-1e9,1e9);
       saveState();
       updateUI();
       checkWinner();
     }
 
     function newGame(confirmMsg=true){
+      const cp = currentProfile();
       if(confirmMsg && !confirm("هل أنت متأكد من بدء جولة جديدة؟")) return;
-      state.scoreA = 0;
-      state.scoreB = 0;
-      state.rounds = [];
+      cp.scoreA = 0;
+      cp.scoreB = 0;
+      cp.rounds = [];
       els.inputA.value = "";
       els.inputB.value = "";
       els.roundNoteInput.value = "";
@@ -516,12 +564,8 @@
     function resetAll(){
       if(!confirm("تأكيد: تصفير كل شيء (الأسماء + الهدف + السجل)؟")) return;
       storage.remove(STORAGE_KEY);
-      state.target = 100;
-      state.nameA = "لنا";
-      state.nameB = "لهم";
-      state.scoreA = 0;
-      state.scoreB = 0;
-      state.rounds = [];
+      state.profiles.teams = defaultProfile("لنا","لهم");
+      state.profiles.players = defaultProfile("لاعب 1","لاعب 2");
       saveState();
       updateUI();
       closeSettings();
@@ -529,9 +573,10 @@
     }
 
     function saveSettings(){
-      state.nameA = (els.setNameA.value || "لنا").trim() || "لنا";
-      state.nameB = (els.setNameB.value || "لهم").trim() || "لهم";
-      state.target = clampInt(els.targetPoints.value || 100, 1, 100000);
+      const cp = currentProfile();
+      cp.nameA = (els.setNameA.value || "لنا").trim() || "لنا";
+      cp.nameB = (els.setNameB.value || "لهم").trim() || "لهم";
+      cp.target = clampInt(els.targetPoints.value || 100, 1, 100000);
       saveState();
       updateUI();
       closeSettings();
@@ -539,8 +584,9 @@
     }
 
     function checkWinner(){
-      const hitA = state.scoreA >= state.target;
-      const hitB = state.scoreB >= state.target;
+      const cp = currentProfile();
+      const hitA = cp.scoreA >= cp.target;
+      const hitB = cp.scoreB >= cp.target;
       if(!hitA && !hitB){
         closeWinner();
         return;
@@ -549,13 +595,21 @@
       let who = "";
       let tie = false;
       if(hitA && hitB){
-        if(state.scoreA > state.scoreB) who = state.nameA;
-        else if(state.scoreB > state.scoreA) who = state.nameB;
+        if(cp.scoreA > cp.scoreB) who = cp.nameA;
+        else if(cp.scoreB > cp.scoreA) who = cp.nameB;
         else { tie = true; who = "تعادل"; }
       }else{
-        who = hitA ? state.nameA : state.nameB;
+        who = hitA ? cp.nameA : cp.nameB;
       }
       openWinner(who, tie);
+    }
+
+    function switchMode(mode){
+      if(mode !== "teams" && mode !== "players") return;
+      state.mode = mode;
+      saveState();
+      updateUI();
+      checkWinner();
     }
 
     // ====== Events ======
@@ -564,6 +618,9 @@
     els.settingsOverlay.addEventListener("click", (e)=>{ if(e.target === els.settingsOverlay) closeSettings(); });
     els.saveSettingsBtn.addEventListener("click", saveSettings);
     els.resetAllBtn.addEventListener("click", resetAll);
+
+    els.modeTeams.addEventListener("click", ()=>switchMode("teams"));
+    els.modePlayers.addEventListener("click", ()=>switchMode("players"));
 
     els.saveRoundBtn.addEventListener("click", registerRound);
     els.undoBtn.addEventListener("click", undoLast);
