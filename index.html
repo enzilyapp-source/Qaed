@@ -144,7 +144,7 @@
     <div class="topbar">
       <div class="title">
         <h1> قيد  - Qaed </h1>
-        <p> — سجل الجولات — تراجع — هدف الفوز من الإعدادات</p>
+        <p>الوضع الحالي: <span id="modeLabel">قيد فرق</span></p>
       </div>
       <button class="iconbtn" id="settingsBtn" title="الإعدادات">⚙️</button>
     </div>
@@ -388,6 +388,7 @@
 
       modeTeams: $("modeTeams"),
       modePlayers: $("modePlayers"),
+      modeLabel: $("modeLabel"),
 
       settingsOverlay: $("settingsOverlay"),
       settingsBtn: $("settingsBtn"),
@@ -479,6 +480,7 @@
       // mode buttons UI
       els.modeTeams.classList.toggle("active", state.mode === "teams");
       els.modePlayers.classList.toggle("active", state.mode === "players");
+      els.modeLabel.textContent = state.mode === "teams" ? "قيد فرق" : "قيد لاعبين";
     }
 
     function openSettings(){
