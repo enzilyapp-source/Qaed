@@ -1,0 +1,44 @@
+/* Legacy general scorekeeper layout, using the same palette and header as hand.css.
+   Keep legacy control classes/IDs so saved games and accounting remain compatible. */
+.general-shell{padding-bottom:24px}
+.grid2,.soloGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.card{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px}
+.teamName{font-size:17px;font-weight:650;overflow-wrap:anywhere}
+.bigScore{font-size:38px;font-weight:750;line-height:1.3;margin-top:8px;direction:ltr;text-align:right;font-variant-numeric:tabular-nums}
+.remaining,.badge,.note,.footerHint,.empty{color:var(--muted);font-size:12px;line-height:1.8}
+.remaining b{color:var(--text)}
+.inputRow{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;direction:ltr;gap:8px;margin-top:18px}
+.stepBtn{height:44px;border-radius:50%;border:1px solid var(--line);background:var(--field);color:var(--text);font-size:26px;touch-action:manipulation}
+.general-shell input,.modal input{width:100%;height:46px;background:var(--field);border:1px solid var(--line);border-radius:11px;color:var(--text);padding:0 12px;font-size:16px}
+.inputRow input{text-align:center;padding:0 4px;font-variant-numeric:tabular-nums}
+.inputRow input::placeholder{font-size:11px;color:var(--muted)}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0;align-items:center}
+.btn{min-height:46px;border:1px solid var(--line);border-radius:12px;background:var(--field);color:var(--text);padding:12px 18px;font-weight:600;touch-action:manipulation}
+.btn.primary{background:var(--gold);border-color:var(--gold);color:var(--bg)}
+.btn.danger{color:var(--red);background:transparent}
+.btn.ghost{background:transparent}
+#saveRoundBtn{flex:1}
+#undoBtn{color:var(--gold)}
+.field{margin:18px 0}
+.field label{display:block;margin-bottom:9px;font-size:13px;color:var(--muted)}
+.note{margin-top:8px}
+.modal select{width:100%;height:46px;padding:0 12px;border:1px solid var(--line);border-radius:11px;background:var(--field);color:var(--text)}
+.general-shell [hidden],.modal [hidden]{display:none!important}
+.logHead,.modalTop{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}
+.logHead h2{font-size:16px}
+.empty{text-align:center;padding:28px 12px}
+#logTable{min-width:100%;width:max-content;border-collapse:collapse;text-align:center;font-size:14px}
+#logTable th,#logTable td{padding:14px 16px;border-bottom:1px solid var(--line);white-space:nowrap}
+#logTable th{color:var(--muted);font-size:12px;font-weight:500}
+#logTable td{font-variant-numeric:tabular-nums}
+#logTable td:last-child{white-space:normal;overflow-wrap:anywhere;max-width:240px}
+.muted{color:var(--muted)}
+.footerHint{margin-top:16px;text-align:center}
+.overlay{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;padding:20px;background:#081c27cc;overflow:auto}
+.modal{width:min(520px,100%);max-height:90dvh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:0 20px 60px #0005}
+.modalTop h3{margin:0;font-size:20px}
+.closeX{width:38px;height:38px;flex-shrink:0;border:1px solid var(--line);border-radius:11px;background:transparent;color:var(--text);font-size:18px}
+.row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.winnerBox{text-align:center;border:1px solid var(--green);border-radius:14px;padding:20px;margin-top:20px;background:var(--bg)}
+.winnerBox .who{font-size:28px;font-weight:750;color:var(--green);margin:8px 0;overflow-wrap:anywhere}
+@media(max-width:520px){.grid2,.soloGrid,.row2{grid-template-columns:1fr}.card{padding:16px}.actions .btn{flex:1}.mode-switch button{padding:11px 5px;font-size:13px}.modal{padding:18px}}

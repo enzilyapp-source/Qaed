@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#152f3b">
+  <meta name="description" content="قيد السبيتة الفردي والفرق: تسجيل يدوي، توقف عند −150 مع تمديد إلى −200، أو توقف نهائي عند +10000.">
+  <title>قيد السبيتة — Qaed</title>
+  <link rel="stylesheet" href="hand.css">
+  <script defer src="hand-core.js"></script>
+  <script defer src="spita-core.js"></script>
+  <script defer src="hand-app.js"></script>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="app-header">
+      <a class="brand" href="index.html" aria-label="قيد السبيتة"><span class="brand-symbol" aria-hidden="true">ق</span><span>قيد<small>كل جولة محسوبة</small></span></a>
+      <nav class="game-switch" aria-label="نوع القيد"><a href="index.html">الهند</a><a href="kout.html">كوت</a><a href="baloot.html">البلوت</a><span class="selected-game" aria-current="page">السبيتة</span><a href="trix.html">التركس</a><a href="general.html">القيد العام</a></nav>
+    </header>
+
+    <section class="game-heading" aria-labelledby="game-title">
+      <div><span class="eyebrow">قيد السبيتة</span><h1 id="game-title">جولة <bdi id="round-label">1</bdi></h1><p id="round-description">أدخل نقاط الجولة، وبعدها اضغط تسجيل.</p></div>
+      <button id="settings-open" class="icon-button" type="button" aria-label="إعدادات اللعبة" title="إعدادات اللعبة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 7h16M4 17h16M8 4v6m8 4v6"/></svg></button>
+    </section>
+
+    <div class="mode-switch" role="group" aria-label="طريقة اللعب">
+      <button type="button" data-mode="individual" aria-pressed="true">فردي</button><button type="button" data-mode="teams" aria-pressed="false">فرق A / B</button>
+    </div>
+    <p id="storage-warning" class="storage-warning" role="status" hidden></p>
+    <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
+
+    <section id="winner-panel" class="winner-panel" aria-live="polite" hidden>
+      <span class="eyebrow">توقفت اللعبة</span><h2 id="winner-name"></h2><p id="winner-detail"></p>
+      <button id="extend-game" class="button secondary" type="button">تمديد إلى −200</button>
+    </section>
+
+    <section class="entry-section" aria-labelledby="entry-title">
+      <div class="section-label"><h2 id="entry-title">نقاط الجولة</h2><span>الأقل مجموعًا يفوز</span></div>
+      <form id="score-form" novalidate>
+        <div id="score-inputs" class="score-inputs"></div>
+        <label class="note-field" for="round-note"><span>ملاحظة <small>اختياري</small></span><input id="round-note" maxlength="180" placeholder="ملاحظة على هالجولة…" autocomplete="off"></label>
+        <div class="entry-footer"><p id="entry-help">الأرقام مسودة؛ ما تنحسب إلا بعد التسجيل.</p><button id="register-round" class="button primary" type="button">تسجيل <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div>
+      </form>
+    </section>
+
+    <details class="rules-note"><summary>قواعد السبيتة</summary><p>النقاط تُكتب يدويًا لكل لاعب أو فريق؛ ما فيه تعبئة تلقائية. الأقل مجموعًا يفوز. اللعبة توقف عند −150 أو أقل، وتقدر تختار التمديد إلى −200. إذا وصل أي مشارك إلى +10000 أو أكثر تتوقف نهائيًا، حتى أثناء التمديد. ما فيه حد لعدد الجولات.</p></details>
+
+    <section class="history-section" aria-labelledby="history-title"><div class="section-label"><h2 id="history-title">سجل الجولات</h2><span id="saved-count">المسجل: 0</span></div><div id="empty-history" class="empty-history"><span aria-hidden="true">—</span><p>أول جولة تبدأ من هنا</p><small>اضغط «تسجيل» عشان تنضاف النقاط للسجل.</small></div><div id="history-wrap" class="table-wrap" role="region" aria-label="نقاط الجولات والمجموع" tabindex="0" hidden><table><caption class="sr-only">الجولات المسجلة والمجموع لكل لاعب أو فريق</caption><thead id="history-head"></thead><tbody id="history-body"></tbody><tfoot id="history-total"></tfoot></table></div></section>
+
+    <footer class="game-actions"><button id="undo-round" class="button secondary" type="button">تراجع عن آخر جولة</button><button id="new-game" class="button quiet" type="button">لعبة جديدة</button></footer>
+    <p class="local-note">قيد مستقل لحساب النقاط • ينحفظ على جهازك • ما يغيّر نتائج تطبيق أنزلي</p>
+  </main>
+
+  <dialog id="settings-dialog" aria-labelledby="settings-title"><div class="dialog-heading"><div><span class="eyebrow">على كيفكم</span><h2 id="settings-title">إعدادات اللعبة</h2></div><button id="settings-close" class="icon-button" type="button" aria-label="إغلاق">×</button></div><form id="settings-form"><div class="settings-options"><label hidden>عدد الجولات<select id="round-limit"><option value="0">حسب النقاط</option></select></label><label id="player-count-label">عدد اللاعبين<select id="player-count"><option value="2">٢ لاعبين</option><option value="3">٣ لاعبين</option><option value="4">٤ لاعبين</option><option value="5">٥ لاعبين</option><option value="6">٦ لاعبين</option></select></label></div><p class="settings-hint">السبيتة تعتمد على المجموع وليس عدد الجولات. تغيير عدد اللاعبين متاح قبل إدخال النقاط.</p><div id="participant-names" class="participant-names"></div><p id="settings-error" class="feedback" role="alert"></p><button class="button primary full-width" type="submit">حفظ الإعدادات</button></form></dialog>
+</body>
+</html>
