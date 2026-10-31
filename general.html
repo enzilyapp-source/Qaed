@@ -2,16 +2,17 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>القيد العام — Qaed</title>
-  <meta name="theme-color" content="#152f3b">
+  <meta name="theme-color" content="#f5f4ef">
   <link rel="stylesheet" href="hand.css">
   <link rel="stylesheet" href="general.css">
+  <link rel="stylesheet" href="mobile.css">
 </head>
 <body>
   <main class="app-shell general-shell">
-    <header class="app-header"><a class="brand" href="index.html" aria-label="قيد"><span class="brand-symbol" aria-hidden="true">ق</span><span>قيد<small>كل جولة محسوبة</small></span></a><nav class="game-switch" aria-label="نوع القيد"><a href="index.html">الهند</a><a href="kout.html">كوت</a><a href="baloot.html">البلوت</a><a href="spita.html">السبيتة</a><a href="trix.html">التركس</a><span class="selected-game" aria-current="page">القيد العام</span></nav></header>
-    <section class="game-heading"><div><span class="eyebrow">قيد على كيفك</span><h1>القيد العام</h1><p>الوضع الحالي: <span id="modeLabel">قيد فرق</span> · حدد الهدف من الإعدادات وسجل نقاط كل جولة.</p></div><button class="icon-button" id="settingsBtn" title="الإعدادات" aria-label="الإعدادات">⚙</button></section>
+    <header class="app-header"><a class="brand" href="index.html" aria-label="قيد"><span class="brand-symbol" aria-hidden="true">ق</span><span>قيد<small>الجمعة تحلى معاكم</small></span></a><details class="game-picker"><summary aria-label="اختيار اللعبة، الحالية القيد العام"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="m12 8 3 4-3 4-3-4 3-4Z"/></svg><span>القيد العام</span><span class="picker-chevron" aria-hidden="true"></span></summary><div class="game-picker-panel"><div class="picker-heading"><span>على أي لعبة؟</span><small>اختَر القيد المناسب لجمعتكم</small></div><nav class="game-switch" aria-label="نوع القيد"><a href="index.html"><span class="game-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="m12 8 3 4-3 4-3-4 3-4Z"/></svg></span><span><strong>الهند</strong><small>فردي وفرق · ٧ إلى ٩ جولات</small></span></a><a href="kout.html"><span class="game-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="m12 8 3 4-3 4-3-4 3-4Z"/></svg></span><span><strong>كوت</strong><small>فريقين · الطلب والنتيجة</small></span></a><a href="baloot.html"><span class="game-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="m12 8 3 4-3 4-3-4 3-4Z"/></svg></span><span><strong>البلوت</strong><small>فريقين · تسجيل النقاط</small></span></a><a href="spita.html"><span class="game-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="m12 8 3 4-3 4-3-4 3-4Z"/></svg></span><span><strong>السبيتة</strong><small>فردي وفرق · حسب المجموع</small></span></a><a href="trix.html"><span class="game-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="m12 8 3 4-3 4-3-4 3-4Z"/></svg></span><span><strong>التركس</strong><small>٤ لاعبين · ٤ ممالك</small></span></a><span class="selected-game" aria-current="page"><span class="game-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="m12 8 3 4-3 4-3-4 3-4Z"/></svg></span><span><strong>القيد العام</strong><small>فردي وفرق · على كيفكم</small></span></span></nav></div></details></header>
+    <section class="game-heading"><div><span class="eyebrow">قيد على كيفك</span><h1>القيد العام</h1><p>الوضع الحالي: <span id="modeLabel">قيد فرق</span> · نقاطكم، على طريقتكم.</p></div><button class="icon-button" id="settingsBtn" title="الإعدادات" aria-label="الإعدادات"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 7h16M4 17h16M8 4v6m8 4v6"/></svg></button></section>
     <div class="modeToggle mode-switch">
       <button class="modeBtn active" data-mode="teams" id="modeTeams">قيد فرق</button>
       <button class="modeBtn" data-mode="solo" id="modeSolo">قيد فردي</button>
@@ -69,7 +70,7 @@
       <input type="text" id="roundNoteInput" placeholder="" />
     </div>
 
-    <div class="card">
+    <div class="card general-history">
       <div class="logHead">
         <h2>سجل الجولات</h2>
         <div class="badge"><span id="roundCount">0</span> جولة</div>
@@ -91,16 +92,16 @@
         </table>
       </div>
 
-      <div class="footerHint">* هذه الحاسبة لتسجيل نقاط الجنجفه بشكل سريع (حسب اتفاقكم على نظام النقاط).</div>
+      <div class="footerHint">النقاط تنضاف للمجموع بعد الضغط على تسجيل.</div>
     </div>
-    <p class="local-note">القيد العام مستقل • ينحفظ على جهازك ومتصفحك</p>
+    <p class="local-note">قيد · كل جولة محسوبة</p>
   </main>
 
   <!-- Settings Modal -->
   <div class="overlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-label="إعدادات القيد العام">
     <div class="modal">
       <div class="modalTop">
-        <h3>⚙️ الإعدادات</h3>
+        <h3>إعدادات اللعبة</h3>
         <button class="closeX" id="closeSettings" aria-label="إغلاق">✕</button>
       </div>
 

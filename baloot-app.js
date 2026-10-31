@@ -37,6 +37,7 @@
     });
     for (const team of ['A', 'B']) {
       $('baloot-total-' + team).textContent = String(scores[team]);
+      $('baloot-live-' + team).textContent = String(scores[team]);
       $('baloot-total-' + team).classList.toggle('leader', Boolean(winner && winner.teams.includes(team)));
     }
     $('baloot-undo').disabled = state.rounds.length === 0;

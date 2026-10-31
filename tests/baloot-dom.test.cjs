@@ -55,3 +55,11 @@ test('corrupt storage is retained while the page continues without persistence',
   assert.equal(ui.$('baloot-total-A').textContent, '10');
   assert.equal(ui.w.localStorage.getItem('qaed.baloot.v1'), '{broken'); ui.dom.window.close();
 });
+test('mobile Baloot totals update only on registration and undo', () => {
+  const ui = open(); ui.enter('A', '30'); ui.enter('B', '12');
+  assert.equal(ui.$('baloot-live-A').textContent, '0');
+  ui.$('baloot-register').click();
+  assert.equal(ui.$('baloot-live-A').textContent, '30'); assert.equal(ui.$('baloot-live-B').textContent, '12');
+  ui.$('baloot-undo').click(); assert.equal(ui.$('baloot-live-A').textContent, '0');
+  ui.dom.window.close();
+});

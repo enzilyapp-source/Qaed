@@ -107,3 +107,13 @@ test('corrupt storage is retained instead of being silently overwritten', () => 
   assert.equal(ui.el('history-body').children.length, 1);
   ui.dom.window.close();
 });
+test('mobile scoreboard shows recorded totals only and follows undo and mode changes', () => {
+  const ui = open();
+  const totals = () => Array.from(ui.el('current-scores').querySelectorAll('bdi'), el => el.textContent);
+  assert.deepEqual(totals(), ['0', '0', '0', '0', '0', '0']);
+  ui.enter('score-p1', '-40'); assert.equal(totals()[0], '0');
+  ui.click('register-round'); assert.deepEqual(totals(), ['-40', '+200', '+200', '+200', '+200', '+200']);
+  ui.click('undo-round'); assert.deepEqual(totals(), ['0', '0', '0', '0', '0', '0']);
+  ui.doc.querySelector('[data-mode="teams"]').click(); assert.deepEqual(totals(), ['0', '0']);
+  ui.dom.window.close();
+});

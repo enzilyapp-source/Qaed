@@ -3,20 +3,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#152f3b">
+  <meta name="theme-color" content="#f5f4ef">
   <meta name="description" content="قيد البلوت: تسجيل نقاط الفريقين A وB يدويًا، مع حساب المجموع والتوقف عند 152.">
   <title>قيد البلوت — Qaed</title>
   <link rel="stylesheet" href="hand.css">
   <script defer src="baloot-core.js"></script>
   <script defer src="baloot-app.js"></script>
+  <link rel="stylesheet" href="mobile.css">
 </head>
 <body>
   <main class="app-shell">
-    <header class="app-header"><a class="brand" href="index.html" aria-label="قيد"><span class="brand-symbol" aria-hidden="true">ق</span><span>قيد<small>كل جولة محسوبة</small></span></a><nav class="game-switch" aria-label="نوع القيد"><a href="index.html">الهند</a><a href="kout.html">كوت</a><span class="selected-game" aria-current="page">البلوت</span><a href="spita.html">السبيتة</a><a href="trix.html">التركس</a><a href="general.html">القيد العام</a></nav></header>
+    <header class="app-header"><a class="brand" href="index.html" aria-label="قيد"><span class="brand-symbol" aria-hidden="true">ق</span><span>قيد<small>الجمعة تحلى معاكم</small></span></a><details class="game-picker"><summary aria-label="اختيار اللعبة، الحالية البلوت"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="m12 8 3 4-3 4-3-4 3-4Z"/></svg><span>البلوت</span><span class="picker-chevron" aria-hidden="true"></span></summary><div class="game-picker-panel"><div class="picker-heading"><span>على أي لعبة؟</span><small>اختَر القيد المناسب لجمعتكم</small></div><nav class="game-switch" aria-label="نوع القيد"><a href="index.html"><span class="game-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="m12 8 3 4-3 4-3-4 3-4Z"/></svg></span><span><strong>الهند</strong><small>فردي وفرق · ٧ إلى ٩ جولات</small></span></a><a href="kout.html"><span class="game-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="m12 8 3 4-3 4-3-4 3-4Z"/></svg></span><span><strong>كوت</strong><small>فريقين · الطلب والنتيجة</small></span></a><span class="selected-game" aria-current="page"><span class="game-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="m12 8 3 4-3 4-3-4 3-4Z"/></svg></span><span><strong>البلوت</strong><small>فريقين · تسجيل النقاط</small></span></span><a href="spita.html"><span class="game-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="m12 8 3 4-3 4-3-4 3-4Z"/></svg></span><span><strong>السبيتة</strong><small>فردي وفرق · حسب المجموع</small></span></a><a href="trix.html"><span class="game-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="m12 8 3 4-3 4-3-4 3-4Z"/></svg></span><span><strong>التركس</strong><small>٤ لاعبين · ٤ ممالك</small></span></a><a href="general.html"><span class="game-tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="m12 8 3 4-3 4-3-4 3-4Z"/></svg></span><span><strong>القيد العام</strong><small>فردي وفرق · على كيفكم</small></span></a></nav></div></details></header>
     <section class="game-heading" aria-labelledby="baloot-title"><div><span class="eyebrow">قيد البلوت</span><h1 id="baloot-title">البلوت</h1><p>اكتب نقاط الفريقين، واضغط تسجيل لاعتماد الجولة.</p></div></section>
     <p id="baloot-storage-warning" class="storage-warning" role="status" hidden></p>
     <p id="baloot-feedback" class="feedback" role="status" aria-live="polite"></p>
     <section id="baloot-winner-panel" class="winner-panel" aria-live="polite" hidden><span class="eyebrow">انتهت اللعبة</span><h2 id="baloot-winner-name"></h2><p id="baloot-winner-detail"></p></section>
+    <section class="live-scores" aria-label="المجموع المسجل"><div class="scoreboard-heading"><span>المجموع الحالي</span><small>الجولات المسجلة فقط</small></div><div class="scoreboard-grid"><div class="scoreboard-person"><span>الفريق A</span><bdi id="baloot-live-A">0</bdi></div><div class="scoreboard-person"><span>الفريق B</span><bdi id="baloot-live-B">0</bdi></div></div></section>
     <section class="entry-section" aria-labelledby="baloot-entry-title"><div class="section-label"><h2 id="baloot-entry-title">نقاط الجولة</h2><span id="baloot-next-round">الجولة 1</span></div>
       <form id="baloot-form" novalidate>
         <div class="score-inputs">
@@ -28,7 +30,7 @@
     </section>
     <section class="history-section" aria-labelledby="baloot-history-title"><div class="section-label"><h2 id="baloot-history-title">سجل الجولات</h2><span id="baloot-saved-count">المسجل: 0</span></div><div id="baloot-empty" class="empty-history"><span aria-hidden="true">—</span><p>ما تسجلت أي جولة بعد</p><small>الأرقام في الخانات مسودة لين تضغط تسجيل.</small></div><div id="baloot-history-wrap" class="table-wrap" role="region" aria-label="جولات البلوت والمجموع" tabindex="0" hidden><table class="baloot-table"><caption class="sr-only">نقاط الفريقين في كل جولة والمجموع المعتمد</caption><thead><tr><th scope="col">الجولة</th><th scope="col">الفريق A</th><th scope="col">الفريق B</th></tr></thead><tbody id="baloot-history-body"></tbody><tfoot><tr><th scope="row">المجموع</th><td id="baloot-total-A">0</td><td id="baloot-total-B">0</td></tr></tfoot></table></div></section>
     <footer class="game-actions"><button id="baloot-undo" class="button secondary" type="button" disabled>تراجع عن آخر جولة</button><button id="baloot-new" class="button quiet" type="button">لعبة جديدة</button></footer>
-    <p class="local-note">قيد البلوت مستقل • ينحفظ على جهازك • اللعبة توقف عند 152 أو أكثر</p>
+    <p class="local-note">قيد · كل جولة محسوبة</p>
   </main>
 </body>
 </html>

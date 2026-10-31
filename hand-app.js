@@ -93,6 +93,15 @@
   }
   function renderHistory() {
     const profile = current(), scores = H.totals(profile);
+    // Visible totals are derived from the same recorded ledger as the history table.
+    const board = $('current-scores');
+    board.replaceChildren();
+    board.dataset.players = String(profile.participants.length);
+    for (const person of profile.participants) {
+      const tile = node('div', 'scoreboard-person');
+      tile.append(node('span', '', person.name), node('bdi', '', format(scores[person.id])));
+      board.append(tile);
+    }
     $('saved-count').textContent = isSpita ? `المسجل: ${profile.rounds.length}` : `المسجل: ${profile.rounds.length} / ${profile.roundLimit}`;
     $('history-wrap').hidden = !profile.rounds.length;
     $('empty-history').hidden = Boolean(profile.rounds.length);
