@@ -77,3 +77,17 @@ test('invalid saved data stays intact while the page works for the current sessi
   assert.equal(ui.$('kout-score-A').textContent, '5');
   assert.equal(ui.w.localStorage.getItem('qaed.kout.v1'), '{invalid-kout'); ui.dom.window.close();
 });
+test('half-game selector wins at 51 vs 20, is saved, and locks after first round', () => {
+  const ui = open(); ui.doc.querySelector('[data-kout-rule="half"]').click();
+  assert(ui.state().halfGame); assert(ui.$('kout-rule-description').textContent.includes('مهما'));
+  const record = (team, contract) => { ui.choose('team', team); ui.choose('contract', contract); ui.choose('outcome', 'win'); ui.$('kout-register').click(); };
+  for (let i = 0; i < 4; i++) record('B', '5');
+  assert(ui.doc.querySelector('[data-kout-rule="full"]').disabled);
+  for (const bid of ['bon', '5', '5', '5']) record('A', bid);
+  assert.equal(ui.$('kout-score-A').textContent, '51'); assert.equal(ui.$('kout-score-B').textContent, '20');
+  assert.equal(ui.$('kout-winner-panel').hidden, false); assert(ui.$('kout-winner-detail').textContent.includes('نص القيد'));
+  const restored = open(ui.w.localStorage.getItem('qaed.kout.v1'));
+  assert(restored.state().halfGame); assert.equal(restored.$('kout-winner-panel').hidden, false);
+  restored.$('kout-undo').click(); assert.equal(restored.$('kout-winner-panel').hidden, true);
+  ui.dom.window.close(); restored.dom.window.close();
+});

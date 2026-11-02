@@ -24,25 +24,33 @@ test('Spita inputs are manual, and only registration changes history', () => {
   for (const key of ['qaed.hand.v1', 'qaed.kout.v1', 'qaed.baloot.v1']) assert.equal(ui.w.localStorage.getItem(key), 'retained');
   ui.dom.window.close();
 });
-test('team game pauses at -150 and explicitly extends to -200', () => {
+test('team game pauses at +150 and explicitly extends to +200', () => {
   const ui = open(); ui.w.document.querySelector('[data-mode=teams]').click();
-  ui.enter('score-A', '-150'); ui.enter('score-B', '50'); ui.$('register-round').click();
+  ui.enter('score-A', '150'); ui.enter('score-B', '50'); ui.$('register-round').click();
   assert.equal(ui.$('winner-panel').hidden, false); assert(!ui.$('extend-game').hidden);
   assert(ui.$('register-round').disabled); assert(ui.$('extend-game').textContent.includes('200'));
   ui.$('extend-game').click(); assert(!ui.$('score-A').disabled); assert(ui.$('winner-panel').hidden);
-  assert.equal(ui.state().profiles.teams.target, -200);
-  ui.enter('score-A', '-50'); ui.enter('score-B', '10'); ui.$('register-round').click();
+  assert.equal(ui.state().profiles.teams.target, 200);
+  ui.enter('score-A', '50'); ui.enter('score-B', '10'); ui.$('register-round').click();
   assert.equal(ui.$('winner-panel').hidden, false); assert(ui.$('extend-game').hidden);
   ui.dom.window.close();
 });
-test('+10000 ends play with no extension, even with simultaneous -150', () => {
+test('custom limit is applied explicitly, survives reload and ends on +5000', () => {
   const ui = open(); ui.w.document.querySelector('[data-mode=teams]').click();
-  ui.enter('score-A', '-150'); ui.enter('score-B', '10000'); ui.$('register-round').click();
-  assert.equal(ui.$('winner-panel').hidden, false); assert(ui.$('extend-game').hidden);
-  assert(ui.$('winner-detail').textContent.includes('10000')); assert(ui.$('register-round').disabled);
-  ui.$('undo-round').click(); assert(ui.$('winner-panel').hidden);
-  assert.equal(ui.$('score-B').value, '10000'); assert.equal(ui.state().profiles.teams.rounds.length, 0);
-  ui.dom.window.close();
+  ui.$('spita-rule').value = 'custom'; ui.$('spita-rule').dispatchEvent(new ui.w.Event('change'));
+  assert.equal(ui.$('spita-custom-label').hidden, false);
+  ui.$('spita-custom-target').value = '٥٠٠٠';
+  ui.$('spita-rule-form').dispatchEvent(new ui.w.Event('submit', {cancelable: true}));
+  assert.equal(ui.state().profiles.teams.target, 5000);
+  ui.enter('score-A', '150'); ui.enter('score-B', '20'); ui.$('register-round').click();
+  assert(ui.$('winner-panel').hidden); assert(ui.$('spita-rule').disabled);
+  const restored = open(ui.w.localStorage.getItem('qaed.spita.v1'));
+  assert(restored.$('spita-rule-summary').textContent.includes('5000'));
+  restored.enter('score-A', '4850'); restored.enter('score-B', '10'); restored.$('register-round').click();
+  assert(!restored.$('winner-panel').hidden); assert(restored.$('extend-game').hidden);
+  assert(restored.$('winner-detail').textContent.includes('+5000')); assert(restored.$('register-round').disabled);
+  restored.$('undo-round').click(); assert(restored.$('winner-panel').hidden);
+  ui.dom.window.close(); restored.dom.window.close();
 });
 test('Spita settings omit the Hand round count and allow individual player setup', () => {
   const ui = open(); ui.$('settings-open').click(); assert(ui.$('round-limit').parentElement.hidden);
@@ -53,11 +61,11 @@ test('Spita settings omit the Hand round count and allow individual player setup
 });
 test('reload keeps extension and draft, with independent modes; new game resets the target', () => {
   const ui = open(); ui.w.document.querySelector('[data-mode=teams]').click();
-  ui.enter('score-A', '-150'); ui.enter('score-B', '20'); ui.$('register-round').click(); ui.$('extend-game').click();
+  ui.enter('score-A', '150'); ui.enter('score-B', '20'); ui.$('register-round').click(); ui.$('extend-game').click();
   ui.enter('score-A', '-20'); const saved = ui.w.localStorage.getItem('qaed.spita.v1'); ui.dom.window.close();
   const restored = open(saved); assert.equal(restored.$('score-A').value, '-20');
-  assert.equal(restored.state().profiles.teams.target, -200); assert.equal(restored.state().profiles.individual.rounds.length, 0);
-  restored.$('new-game').click(); assert.equal(restored.state().profiles.teams.target, -150);
+  assert.equal(restored.state().profiles.teams.target, 200); assert.equal(restored.state().profiles.individual.rounds.length, 0);
+  restored.$('new-game').click(); assert.equal(restored.state().profiles.teams.target, 150);
   assert.equal(restored.state().profiles.teams.rounds.length, 0); restored.dom.window.close();
 });
 test('Baloot title no longer contains the removed race slogan', () => {

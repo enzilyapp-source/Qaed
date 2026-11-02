@@ -32,6 +32,12 @@
       $('kout-score-' + id).classList.toggle('winning-score', Boolean(winner && winner.team === id));
       $('kout-total-' + id).classList.toggle('leader', Boolean(winner && winner.team === id));
     }
+    $('kout-rule-description').textContent = state.halfGame ? 'نص قيد: الفوز عند 51 أو أكثر، مهما كانت نتيجة الخصم.' : 'قيد كامل: الفوز عند 101، أو 51 وفوق مقابل صفر.';
+    document.querySelectorAll('[data-kout-rule]').forEach(button => {
+      button.setAttribute('aria-pressed', String(state.halfGame === (button.dataset.koutRule === 'half')));
+      button.disabled = state.rounds.length > 0;
+    });
+    $('kout-rule-hint').textContent = state.rounds.length ? 'لتغيير النظام، ابدأ لعبة جديدة.' : 'اختَر نظام القيد قبل تسجيل أول جولة.';
     $('kout-saved-count').textContent = `${state.rounds.length} جولات مسجلة`;
     $('kout-next-round').textContent = winner ? 'اللعبة مكتملة' : `الجولة ${state.rounds.length + 1}`;
     $('kout-empty').hidden = state.rounds.length > 0;
@@ -63,11 +69,17 @@
     if (winner) {
       $('kout-winner-name').textContent = `الفائز: ${state.names[winner.team]}`;
       const other = winner.team === 'A' ? 'B' : 'A';
-      $('kout-winner-detail').textContent = winner.reason === 'shutout'
+      $('kout-winner-detail').textContent = winner.reason === 'half-game'
+        ? `${scores[winner.team]} مقابل ${scores[other]} — فاز بنص القيد عند 51 أو أكثر.`
+        : winner.reason === 'shutout'
         ? `${scores[winner.team]} مقابل صفر — فاز بوصوله إلى 51 أو أكثر والخصم صفر.`
         : `${scores[winner.team]} مقابل ${scores[other]} — وصل إلى 101 أو أكثر.`;
     }
   }
+  document.querySelectorAll('[data-kout-rule]').forEach(button => button.addEventListener('click', () => {
+    try { state = K.setHalfGame(state, button.dataset.koutRule === 'half'); persist(); render(); feedback(''); }
+    catch (error) { feedback(error.message); }
+  }));
   document.querySelectorAll('[data-kout-field]').forEach(button => button.addEventListener('click', () => {
     state = K.choose(state, button.dataset.koutField, button.dataset.koutValue);
     persist(); render(); feedback('');

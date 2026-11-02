@@ -92,3 +92,24 @@ test('storage refuses invalid contracts and rounds recorded after a winner', () 
   done.rounds.push({ team: 'A', contract: '5', outcome: 'win', timestamp: 1 });
   assert.throws(() => K.restore(JSON.stringify(done)));
 });
+for (const team of ['A', 'B']) test(`half game: ${team} wins at 51 against nonzero opponent`, () => {
+  const other = team === 'A' ? 'B' : 'A';
+  let state = K.setHalfGame(K.initialState(), true);
+  for (let i = 0; i < 4; i++) state = play(state, other, '5');
+  for (const contract of ['bon', '5', '5', '5']) state = play(state, team, contract);
+  assert.equal(K.totals(state)[team], 51); assert.equal(K.totals(state)[other], 20);
+  assert.equal(K.winner(state).team, team); assert.equal(K.winner(state).reason, 'half-game');
+  assert.throws(() => K.record(state));
+  assert.deepEqual(K.restore(JSON.stringify(state)), state);
+  state = K.undo(state); assert.equal(K.winner(state), null);
+  assert.throws(() => K.setHalfGame(state, false));
+  state = K.newGame(state); assert.equal(state.halfGame, true);
+  state = K.setHalfGame(state, false); assert.equal(state.halfGame, false);
+});
+test('old saved Kout games default to full game', () => {
+  let state = play(K.initialState(), 'B', '5');
+  for (const bid of ['bon', '5', '5', '5']) state = play(state, 'A', bid);
+  delete state.halfGame;
+  const restored = K.restore(JSON.stringify(state)); assert.equal(restored.halfGame, false);
+  assert.equal(K.winner(restored), null); assert.deepEqual(K.totals(restored), {A: 51, B: 5});
+});

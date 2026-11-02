@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f5f4ef">
-  <meta name="description" content="قيد السبيتة الفردي والفرق: تسجيل يدوي، توقف عند −150 مع تمديد إلى −200، أو توقف نهائي عند +10000.">
+  <meta name="description" content="قيد السبيتة الفردي والفرق: تسجيل يدوي، Standard عند +150 وتمديد +200، أو Custom بحد نهاية تختاره.">
   <title>قيد السبيتة — Qaed</title>
   <link rel="stylesheet" href="hand.css">
   <script defer src="hand-core.js"></script>
@@ -27,12 +27,13 @@
     <div class="mode-switch" role="group" aria-label="طريقة اللعب">
       <button type="button" data-mode="individual" aria-pressed="true">فردي</button><button type="button" data-mode="teams" aria-pressed="false">فرق A / B</button>
     </div>
+    <section class="game-rule-settings" aria-labelledby="spita-rule-title"><div class="section-label"><h2 id="spita-rule-title">نظام السبيتة</h2><span id="spita-rule-summary">Standard · +150</span></div><form id="spita-rule-form"><div class="settings-options"><label>النظام<select id="spita-rule"><option value="standard">Standard</option><option value="custom">Custom</option></select></label><label id="spita-custom-label" hidden>تنتهي اللعبة عند<input id="spita-custom-target" type="text" inputmode="numeric" dir="ltr" maxlength="10" placeholder="5000" autocomplete="off"></label></div><p id="spita-rule-hint" class="settings-hint">Standard: نهاية عند +150 مع خيار تمديد إلى +200.</p><button id="spita-rule-save" type="submit" class="button secondary full-width">اعتماد نظام اللعبة</button></form></section>
     <p id="storage-warning" class="storage-warning" role="status" hidden></p>
     <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
 
     <section id="winner-panel" class="winner-panel" aria-live="polite" hidden>
       <span class="eyebrow">توقفت اللعبة</span><h2 id="winner-name"></h2><p id="winner-detail"></p>
-      <button id="extend-game" class="button secondary" type="button">تمديد إلى −200</button>
+      <button id="extend-game" class="button secondary" type="button">تمديد إلى +200</button>
     </section>
 
     <section class="live-scores" aria-label="المجموع المسجل"><div class="scoreboard-heading"><span>المجموع الحالي</span><small>الجولات المسجلة فقط</small></div><div id="current-scores" class="scoreboard-grid"></div></section>
@@ -46,7 +47,7 @@
       </form>
     </section>
 
-    <details class="rules-note"><summary>قواعد السبيتة</summary><p>النقاط تُكتب يدويًا لكل لاعب أو فريق؛ ما فيه تعبئة تلقائية. الأقل مجموعًا يفوز. اللعبة توقف عند −150 أو أقل، وتقدر تختار التمديد إلى −200. إذا وصل أي مشارك إلى +10000 أو أكثر تتوقف نهائيًا، حتى أثناء التمديد. ما فيه حد لعدد الجولات.</p></details>
+    <details class="rules-note"><summary>قواعد السبيتة</summary><p>النقاط تُكتب يدويًا لكل لاعب أو فريق، والأقل مجموعًا يفوز. في Standard تتوقف اللعبة إذا وصل أي مشارك إلى +150 أو أكثر، مع خيار تمديد إلى +200 إذا لم يصلها أحد بعد. في Custom تحدد حد النهاية الموجب بنفسك، مثل +5000. لا يوجد حد لعدد الجولات.</p></details>
 
     <section class="history-section" aria-labelledby="history-title"><div class="section-label"><h2 id="history-title">سجل الجولات</h2><span id="saved-count">المسجل: 0</span></div><div id="empty-history" class="empty-history"><span aria-hidden="true">—</span><p>أول جولة تبدأ من هنا</p><small>اضغط «تسجيل» عشان تنضاف النقاط للسجل.</small></div><div id="history-wrap" class="table-wrap" role="region" aria-label="نقاط الجولات والمجموع" tabindex="0" hidden><table><caption class="sr-only">الجولات المسجلة والمجموع لكل لاعب أو فريق</caption><thead id="history-head"></thead><tbody id="history-body"></tbody><tfoot id="history-total"></tfoot></table></div></section>
 

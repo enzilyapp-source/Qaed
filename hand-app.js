@@ -49,7 +49,7 @@
     $('round-note').value = profile.note;
     $('round-note').disabled = done;
     $('register-round').disabled = Boolean(H.validateDraft(profile));
-    $('entry-help').textContent = done ? (isSpita ? 'اللعبة متوقفة حسب المجموع. التمديد إلى −200 متاح فقط إذا ظهر الزر.' : 'الجولات مكتملة. تقدر تضيف جولة لغاية ٩.')
+    $('entry-help').textContent = done ? (isSpita ? 'اللعبة متوقفة حسب المجموع. التمديد إلى +200 متاح فقط إذا ظهر الزر.' : 'الجولات مكتملة. تقدر تضيف جولة لغاية ٩.')
       : 'الأرقام مسودة؛ اكتب 0 لأي لاعب بدون نقاط، وبعدها اضغط تسجيل.';
   }
   function buildFields() {
@@ -134,6 +134,7 @@
   }
   function render() {
     const profile = current(), done = H.completed(profile);
+    if (isSpita) renderSpitaRules();
     document.querySelectorAll('[data-mode]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.mode === state.mode)));
     $('round-label').textContent = isSpita ? String(done ? profile.rounds.length : profile.rounds.length + 1)
       : `${done ? profile.roundLimit : profile.rounds.length + 1} / ${profile.roundLimit}`;
@@ -147,13 +148,35 @@
       $('winner-detail').textContent = `أقل مجموع: ${format(scores[leaders[0].id])} نقطة بعد ${profile.rounds.length} جولات مسجلة.`;
       if (isSpita) {
         const end = H.termination(profile);
-        $('winner-detail').textContent += end.reason === 'loss-limit' ? ' توقفت اللعبة لأن أحد المشاركين وصل +10000 أو أكثر.'
-          : ` وصل الأقل إلى ${profile.target} أو أقل.`;
+        $('winner-detail').textContent += ` توقفت اللعبة بوصول أحد المشاركين إلى +${profile.target} أو أكثر.`;
+        if (H.canExtend(profile)) $('winner-detail').textContent += ' تبي تكملون؟ اختاروا التمديد إلى +200.';
       }
       $('extend-game').hidden = isSpita ? !H.canExtend(profile) : profile.roundLimit >= 9;
-      $('extend-game').textContent = isSpita ? 'تمديد إلى −200' : `إضافة الجولة ${profile.roundLimit + 1}`;
+      $('extend-game').textContent = isSpita ? 'تمديد إلى +200' : `إضافة الجولة ${profile.roundLimit + 1}`;
     }
     buildFields(); updateFields(); renderHistory();
+  }
+  function renderSpitaRules() {
+    const p = current(), locked = p.rounds.length > 0;
+    $('spita-rule').value = p.rule;
+    $('spita-rule').disabled = locked;
+    $('spita-custom-label').hidden = p.rule !== 'custom';
+    $('spita-custom-target').value = p.rule === 'custom' ? String(p.target) : '';
+    $('spita-custom-target').disabled = locked;
+    $('spita-rule-save').disabled = locked;
+    $('spita-rule-summary').textContent = `${p.rule === 'custom' ? 'Custom' : 'Standard'} · +${p.target}`;
+    $('spita-rule-hint').textContent = locked ? `حد النهاية +${p.target}. لتغيير النظام ابدأ لعبة جديدة.`
+      : p.rule === 'custom' ? 'اختَر حد نهاية موجبًا، مثل +5000. الأقل مجموعًا يفوز.' : 'Standard: نهاية عند +150 مع خيار تمديد إلى +200.';
+  }
+  if (isSpita) {
+    $('spita-rule').addEventListener('change', () => {
+      $('spita-custom-label').hidden = $('spita-rule').value !== 'custom';
+    });
+    $('spita-rule-form').addEventListener('submit', event => {
+      event.preventDefault();
+      try { put(H.setRules(current(), $('spita-rule').value, $('spita-custom-target').value)); persist(); render(); feedback('تم اعتماد نظام السبيتة.'); }
+      catch (error) { feedback(error.message); }
+    });
   }
   // No Enter-to-save and no auto-commit: only this explicit button records a round.
   $('score-form').addEventListener('submit', event => event.preventDefault());
@@ -175,7 +198,7 @@
     put(H.newGame(current())); persist(); render(); feedback('لعبة جديدة، بالتوفيق!');
   });
   $('extend-game').addEventListener('click', () => {
-    try { put(H.extend(current())); persist(); render(); feedback(isSpita ? 'تم تمديد هدف الفوز إلى −200.' : 'تم تمديد اللعبة بجولة.'); }
+    try { put(H.extend(current())); persist(); render(); feedback(isSpita ? 'تم تمديد حد نهاية اللعبة إلى +200.' : 'تم تمديد اللعبة بجولة.'); }
     catch (error) { feedback(error.message); }
   });
   document.querySelectorAll('[data-mode]').forEach(button => button.addEventListener('click', () => {

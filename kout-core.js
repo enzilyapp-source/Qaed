@@ -12,7 +12,7 @@
   });
   const TEAM_IDS = ['A', 'B'];
   function initialState() {
-    return { version: 1, names: { A: 'الفريق الأول', B: 'الفريق الثاني' }, rounds: [],
+    return { version: 1, halfGame: false, names: { A: 'الفريق الأول', B: 'الفريق الثاني' }, rounds: [],
       draft: { team: null, contract: null, outcome: null } };
   }
   function award(team, contract, outcome) {
@@ -32,11 +32,17 @@
   function winner(state) {
     const scores = totals(state);
     for (const id of TEAM_IDS) {
+      if (state.halfGame && scores[id] >= 51) return { team: id, reason: 'half-game', scores };
       if (scores[id] >= 101) return { team: id, reason: 'target', scores };
       if (scores[id] >= 51 && scores[id === 'A' ? 'B' : 'A'] === 0)
         return { team: id, reason: 'shutout', scores };
     }
     return null;
+  }
+  function setHalfGame(state, enabled) {
+    if (typeof enabled !== 'boolean') throw new Error('اختَر نظام قيد صالح');
+    if (state.rounds.length) throw new Error('ابدأ لعبة جديدة لتغيير نظام القيد؛ السجل الحالي محفوظ.');
+    return { ...state, halfGame: enabled };
   }
   function hasDraft(state) { return Object.values(state.draft).some(value => value !== null); }
   function choose(state, field, value) {
@@ -63,7 +69,7 @@
     return { ...state, rounds: state.rounds.slice(0, -1),
       draft: { team: last.team, contract: last.contract, outcome: last.outcome } };
   }
-  function newGame(state) { return { ...initialState(), names: { ...state.names } }; }
+  function newGame(state) { return { ...initialState(), names: { ...state.names }, halfGame: Boolean(state.halfGame) }; }
   function rename(state, a, b) {
     const clean = (name, fallback) => String(name || '').trim().slice(0, 32) || fallback;
     return { ...state, names: { A: clean(a, 'الفريق الأول'), B: clean(b, 'الفريق الثاني') } };
@@ -75,7 +81,9 @@
       TEAM_IDS.some(id => typeof state.names[id] !== 'string' || !state.names[id].trim() || state.names[id].length > 32) ||
       !Array.isArray(state.rounds) || state.rounds.length > 100 || !state.draft)
       throw new Error('الحفظ السابق غير صالح');
-    const check = { ...initialState(), rounds: [] };
+    if (state.halfGame === undefined) state.halfGame = false;
+    if (typeof state.halfGame !== 'boolean') throw new Error('نظام القيد غير صالح');
+    const check = { ...initialState(), halfGame: state.halfGame, rounds: [] };
     for (const round of state.rounds) {
       if (winner(check) || !round || !Number.isFinite(round.timestamp)) throw new Error('سجل جولات غير صالح');
       award(round.team, round.contract, round.outcome);
@@ -89,7 +97,7 @@
     return state;
   }
   const api = { STORAGE_KEY, CONTRACTS, initialState, award, totals, winner, hasDraft,
-    choose, preview, record, undo, newGame, rename, restore };
+    choose, setHalfGame, preview, record, undo, newGame, rename, restore };
   root.KoutScore = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(globalThis);

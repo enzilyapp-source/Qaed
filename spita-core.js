@@ -2,29 +2,27 @@
 (function (root) {
   'use strict';
   const H = root.HandScore || (typeof require === 'function' ? require('./hand-core.js') : null);
-  const STORAGE_KEY = 'qaed.spita.v1', LOSS_LIMIT = 10000;
+  const STORAGE_KEY = 'qaed.spita.v1';
   function profile(mode = 'individual', count = 6) {
-    return { participants: H.profile(mode, count).participants, target: -150,
+    return { participants: H.profile(mode, count).participants, rule: 'standard', target: 150,
       rounds: [], draft: {}, note: '' };
   }
   function initialState() {
-    return { version: 1, mode: 'individual', profiles: { individual: profile(), teams: profile('teams') } };
+    return { version: 2, mode: 'individual', profiles: { individual: profile(), teams: profile('teams') } };
   }
   const totals = H.totals, leaders = H.leaders, parse = H.parse, normalize = H.normalize;
   function termination(p) {
     if (!p.rounds.length) return null;
     const scores = totals(p);
-    const hitLoss = p.participants.filter(person => scores[person.id] >= LOSS_LIMIT);
-    // The +10000 limit always takes precedence, including during an extension.
-    if (hitLoss.length) return { reason: 'loss-limit', scores, hitLoss };
-    if (Math.min(...Object.values(scores)) <= p.target) return { reason: 'winning-target', scores, hitLoss: [] };
+    const reached = p.participants.filter(person => scores[person.id] >= p.target);
+    if (reached.length) return { reason: 'score-limit', scores, reached };
     return null;
   }
   const completed = p => Boolean(termination(p));
   function canExtend(p) {
     const end = termination(p);
-    return Boolean(end && end.reason === 'winning-target' && p.target === -150 &&
-      Math.min(...Object.values(end.scores)) > -200);
+    return Boolean(end && p.rule === 'standard' && p.target === 150 &&
+      Math.max(...Object.values(end.scores)) < 200);
   }
   function hasDraft(p) { return Object.values(p.draft).some(value => normalize(value) !== '') || p.note.trim() !== ''; }
   function edit(p, id, value) {
@@ -38,7 +36,7 @@
       : `${polarity < 0 ? '-' : '+'}${Math.abs(number)}`);
   }
   function validateDraft(p) {
-    if (completed(p)) return 'اللعبة متوقفة. تقدر تختار التمديد إلى −200 إذا الخيار متاح، أو تبدأ لعبة جديدة.';
+    if (completed(p)) return 'اللعبة متوقفة. تقدر تختار التمديد إلى +200 إذا الخيار متاح، أو تبدأ لعبة جديدة.';
     for (const person of p.participants)
       if (parse(p.draft[person.id]) === null) return `أدخل رقمًا صحيحًا لـ${person.name}؛ اكتب 0 إذا ما عنده نقاط.`;
     return null;
@@ -50,16 +48,24 @@
       draft: {}, note: '' };
   }
   function extend(p) {
-    if (!canExtend(p)) throw new Error('التمديد متاح عند −150 فقط، ما دام ما أحد وصل +10000 أو −200.');
-    return { ...p, target: -200 };
+    if (!canExtend(p)) throw new Error('التمديد متاح في Standard عند +150 فقط، ما دام ما أحد وصل +200.');
+    return { ...p, target: 200 };
   }
   function undo(p) {
     if (!p.rounds.length) return p;
     const last = p.rounds[p.rounds.length - 1];
-    return { ...p, rounds: p.rounds.slice(0, -1), note: last.note,
+    return { ...p, rounds: p.rounds.slice(0, -1), legacyRoundCount: Math.min(p.legacyRoundCount || 0, p.rounds.length - 1), note: last.note,
       draft: Object.fromEntries(Object.entries(last.scores).map(([id, score]) => [id, String(score)])) };
   }
-  function newGame(p) { return { ...p, target: -150, rounds: [], draft: {}, note: '' }; }
+  function newGame(p) { return { ...p, target: p.rule === 'custom' ? p.target : 150, legacyRoundCount: 0, rounds: [], draft: {}, note: '' }; }
+  function setRules(p, rule, value) {
+    if (!['standard', 'custom'].includes(rule)) throw new Error('اختَر Standard أو Custom');
+    const normalized = normalize(value);
+    const target = rule === 'standard' ? 150 : (/^\+?\d+$/.test(normalized) ? Number(normalized) : NaN);
+    if (!Number.isSafeInteger(target) || target < 1 || target > 1e9) throw new Error('اكتب حد نهاية موجبًا صحيحًا، مثل 5000.');
+    if (p.rounds.length) throw new Error('ابدأ لعبة جديدة لتغيير حد النهاية؛ السجل الحالي محفوظ.');
+    return { ...p, rule, target };
+  }
   // The shared score page supplies a round-limit argument for Hand. Spita ignores
   // it deliberately: its stopping condition is the score, never seven/nine rounds.
   function configure(p, mode, count, _unusedRoundLimit, names) {
@@ -71,14 +77,17 @@
     return { ...p, participants: people };
   }
   function validProfile(p, mode) {
-    if (!p || ![-150, -200].includes(p.target) || !Array.isArray(p.participants) || !Array.isArray(p.rounds) ||
+    if (!p || !['standard', 'custom'].includes(p.rule) || !Number.isSafeInteger(p.target) || p.target < 1 || p.target > 1e9 ||
+      (p.rule === 'standard' && ![150, 200].includes(p.target)) || !Array.isArray(p.participants) || !Array.isArray(p.rounds) ||
       !p.draft || Array.isArray(p.draft) || typeof p.draft !== 'object' || typeof p.note !== 'string') return false;
     const expected = profile(mode, p.participants.length).participants;
     if (p.participants.length !== expected.length || p.participants.some((person, i) =>
       person.id !== expected[i].id || typeof person.name !== 'string' || !person.name.trim() || person.name.length > 32)) return false;
+    const inherited = p.legacyRoundCount || 0;
+    if (!Number.isInteger(inherited) || inherited < 0 || inherited > p.rounds.length) return false;
     const check = { ...p, rounds: [] };
     for (const round of p.rounds) {
-      if (completed(check) || !round || !Number.isFinite(round.timestamp) || typeof round.note !== 'string' ||
+      if ((check.rounds.length >= inherited && completed(check)) || !round || !Number.isFinite(round.timestamp) || typeof round.note !== 'string' ||
         !round.scores || Object.keys(round.scores).length !== expected.length || expected.some(person =>
           typeof round.scores[person.id] !== 'number' || parse(round.scores[person.id]) === null)) return false;
       check.rounds.push(round);
@@ -88,13 +97,23 @@
   function restore(text) {
     if (!text) return initialState();
     const state = JSON.parse(text);
-    if (!state || state.version !== 1 || !['individual', 'teams'].includes(state.mode) || !state.profiles ||
+    if (state?.version === 1 && state.profiles) {
+      // Preserve signed scores and the full old ledger; only the stopping rule changes.
+      // Older games could pass +150 in an early round under the former negative rule.
+      for (const mode of ['individual', 'teams']) {
+        const p = state.profiles[mode];
+        if (!p || ![-150, -200].includes(p.target) || !Array.isArray(p.rounds)) throw new Error('الحفظ السابق للسبيتة غير صالح');
+        state.profiles[mode] = { ...p, rule: 'standard', target: Math.abs(p.target), legacyRoundCount: p.rounds.length };
+      }
+      state.version = 2;
+    }
+    if (!state || state.version !== 2 || !['individual', 'teams'].includes(state.mode) || !state.profiles ||
       !validProfile(state.profiles.individual, 'individual') || !validProfile(state.profiles.teams, 'teams'))
       throw new Error('الحفظ السابق للسبيتة غير صالح');
     return state;
   }
-  const api = { KIND: 'spita', STORAGE_KEY, LOSS_LIMIT, profile, initialState, totals, leaders, parse, normalize,
-    termination, completed, canExtend, hasDraft, edit, sign, validateDraft, record, extend, undo, newGame, configure, restore };
+  const api = { KIND: 'spita', STORAGE_KEY, profile, initialState, totals, leaders, parse, normalize,
+    termination, completed, canExtend, hasDraft, edit, sign, validateDraft, record, extend, undo, newGame, setRules, configure, restore };
   root.SpitaScore = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(globalThis);
