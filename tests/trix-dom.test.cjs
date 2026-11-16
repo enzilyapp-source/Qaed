@@ -66,19 +66,19 @@ test('complex supports any two components, requires start, and closes both atomi
   assert.equal(ui.state().rounds.length, 1); assert.deepEqual(ui.state().rounds[0].types, ['queens', 'king']);
   assert(ui.$('trix-game-queens').disabled); assert(ui.$('trix-game-king').disabled); assert(!ui.$('trix-game-trix').disabled);
   const totals = ui.$('trix-table-foot').firstChild.children;
-  assert.equal(totals[1].textContent, '-25'); assert.equal(totals[2].textContent, '-150');
+  assert.equal(totals[1].textContent, '+25'); assert.equal(totals[2].textContent, '+150');
   ui.$('trix-undo').click(); assert.equal(ui.state().rounds.length, 0);
   assert(!ui.$('trix-game-queens').disabled); assert(!ui.$('trix-game-king').disabled);
   assert.equal(ui.$('trix-forms').children.length, 2); assert(!ui.$('trix-register').disabled); ui.dom.window.close();
 });
-test('king announcement uses corrected -150/+75 and allows net -75 for the same player', () => {
+test('king announcement uses inverted +150/-75 and allows net +75 for the same player', () => {
   const ui = open(); ui.$('trix-game-king').click(); ui.$('trix-king-taker-p3').click();
-  assert.equal(ui.$('trix-preview').children[2].textContent.includes('-75'), true);
+  assert.equal(ui.$('trix-preview').children[2].textContent.includes('+75'), true);
   ui.$('trix-king-declared').click(); assert(ui.$('trix-register').disabled);
   ui.$('trix-king-declarer-p4').click();
-  assert(ui.$('trix-preview').children[2].textContent.includes('-150'));
-  assert(ui.$('trix-preview').children[3].textContent.includes('+75'));
-  ui.$('trix-king-declarer-p3').click(); assert(ui.$('trix-preview').children[2].textContent.includes('-75'));
+  assert(ui.$('trix-preview').children[2].textContent.includes('+150'));
+  assert(ui.$('trix-preview').children[3].textContent.includes('-75'));
+  ui.$('trix-king-declarer-p3').click(); assert(ui.$('trix-preview').children[2].textContent.includes('+75'));
   ui.dom.window.close();
 });
 test('rank selection swaps positions and scores each unique rank correctly', () => {
@@ -87,7 +87,7 @@ test('rank selection swaps positions and scores each unique rank correctly', () 
   assert(!ui.$('trix-register').disabled); ui.$('trix-rank-0-2').click();
   assert.deepEqual(ui.state().draft.data.trix.ranks, [2, 1, 3, 4]);
   const preview = [...ui.$('trix-preview').querySelectorAll('bdi')].map(el => el.textContent);
-  assert.deepEqual(preview, ['+150', '+200', '+100', '+50']);
+  assert.deepEqual(preview, ['-150', '-200', '-100', '-50']);
   ui.$('trix-register').click(); assert(ui.$('trix-game-trix').disabled); ui.dom.window.close();
 });
 test('completing a kingdom moves to the next owner; undo returns to the previous one', () => {
@@ -100,7 +100,7 @@ test('completing a kingdom moves to the next owner; undo returns to the previous
   assert.equal(ui.state().rounds.length, 4); assert.equal(ui.state().draft.selection, 'trix');
   assert(!ui.$('trix-register').disabled); ui.dom.window.close();
 });
-test('completed four-kingdom game shows highest total winner and prevents extra results', () => {
+test('completed four-kingdom game shows lowest total winner and prevents extra results', () => {
   let state = T.initialState(); for (let k = 0; k < 4; k++) for (const type of T.TYPES) state = single(state, type);
   const ui = open(JSON.stringify(state)); assert.equal(ui.$('trix-winner-panel').hidden, false);
   assert(ui.$('trix-winner-name').textContent.includes('اللاعب الأول'));
@@ -128,4 +128,27 @@ test('corrupt saved history stays intact while the current session remains usabl
   ui.$('trix-game-king').click(); ui.$('trix-king-taker-p2').click(); ui.$('trix-register').click();
   assert.equal(ui.$('trix-ledger').children.length, 1);
   assert.equal(ui.w.localStorage.getItem('qaed.trix.v1'), '{bad-trix'); ui.dom.window.close();
+});
+
+test('history can be hidden while entering and recording without changing or losing scores', () => {
+  const ui = open(); const toggle = ui.$('trix-history-toggle');
+  ui.$('trix-game-tricks').click(); ui.enter('tricks', 0, '13');
+  const before = ui.w.localStorage.getItem(T.STORAGE_KEY);
+  toggle.click();
+  assert.equal(ui.$('trix-history').hidden, true); assert.equal(toggle.getAttribute('aria-expanded'), 'false');
+  assert.equal(toggle.textContent, 'إظهار السجل'); assert.equal(ui.w.localStorage.getItem(T.STORAGE_KEY), before);
+  assert(!ui.$('trix-register').disabled); ui.$('trix-register').click();
+  assert.equal(ui.$('trix-history').hidden, true); assert.equal(ui.state().rounds.length, 1);
+  assert.equal(ui.$('trix-table-body').lastChild.children[1].textContent, '+195');
+  toggle.click(); assert.equal(ui.$('trix-history').hidden, false); assert.equal(toggle.getAttribute('aria-expanded'), 'true');
+  assert.equal(ui.$('trix-ledger').children.length, 1); ui.dom.window.close();
+});
+test('legacy saved games display matching rules and preview, new game adopts the inverted signs', () => {
+  const old = T.undo(T.restore(JSON.stringify(require('./fixtures/trix-legacy.json'))));
+  const ui = open(JSON.stringify(old));
+  assert(ui.$('trix-rules').textContent.includes('الحسبة السابقة'));
+  assert.equal(ui.$('trix-preview').querySelector('bdi').textContent, '+200');
+  ui.$('trix-new').click(); ui.$('trix-game-trix').click();
+  assert(!ui.$('trix-rules').textContent.includes('الحسبة السابقة'));
+  assert(ui.$('trix-forms').textContent.includes('-200')); ui.dom.window.close();
 });

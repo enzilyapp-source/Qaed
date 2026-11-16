@@ -4,10 +4,15 @@
   const STORAGE_KEY = 'qaed.trix.v1';
   const PLAYER_IDS = ['p1', 'p2', 'p3', 'p4'];
   const TYPES = ['tricks', 'diamonds', 'queens', 'king', 'trix'];
+  // Historical name: contracts eligible for Complex, irrespective of score signs.
   const NEGATIVE = ['tricks', 'diamonds', 'queens', 'king'];
   const LABELS = Object.freeze({ tricks: 'أكلات', diamonds: 'ديامن', queens: 'ميمات', king: 'باش', trix: 'تركس', complex: 'كومبلكس' });
-  const COUNTERS = Object.freeze({ tricks: { count: 13, unit: -15 }, diamonds: { count: 13, unit: -10 }, queens: { count: 4, unit: -25 } });
-  const RANK_POINTS = [200, 150, 100, 50];
+  const COUNTERS = Object.freeze({ tricks: { count: 13, unit: 15 }, diamonds: { count: 13, unit: 10 }, queens: { count: 4, unit: 25 } });
+  const RANK_POINTS = [-200, -150, -100, -50];
+  // Pin the convention to the game: existing live saves retain their old totals.
+  const lowerWins = state => state.scoring === 'low-wins';
+  const convention = state => lowerWins(state) ? 'low-wins' : 'legacy-high';
+  const points = (state, value) => value === 0 ? 0 : lowerWins(state) ? value : -value;
   const copy = value => JSON.parse(JSON.stringify(value));
   function readCount(value) {
     const text = String(value ?? '').trim().replace(/[٠-٩]/g, x => String(x.charCodeAt(0) - 1632))
@@ -21,7 +26,7 @@
   }
   function emptyDraft() { return { selection: null, components: [], complexStarted: false, data: blankData() }; }
   function initialState() {
-    return { version: 1, players: PLAYER_IDS.map((id, i) => ({ id, name: ['اللاعب الأول', 'اللاعب الثاني', 'اللاعب الثالث', 'اللاعب الرابع'][i] })),
+    return { version: 1, scoring: 'low-wins', players: PLAYER_IDS.map((id, i) => ({ id, name: ['اللاعب الأول', 'اللاعب الثاني', 'اللاعب الثالث', 'اللاعب الرابع'][i] })),
       rounds: [], draft: emptyDraft() };
   }
   function used(state, kingdom) {
@@ -78,7 +83,8 @@
     else { if (other !== -1) ranks[other] = previous; ranks[index] = rank; }
     return setData(state, 'trix', { ranks });
   }
-  function scoreComponent(type, data) {
+  function scoreComponent(type, data, scoring = 'low-wins') {
+    const direction = scoring === 'legacy-high' ? -1 : 1;
     if (!TYPES.includes(type) || !data || typeof data !== 'object') throw new Error('بيانات نوع اللعب غير صالحة.');
     if (Object.hasOwn(COUNTERS, type)) {
       const rule = COUNTERS[type];
@@ -87,21 +93,21 @@
       if (counts.some(n => n === null || n < 0 || n > rule.count)) throw new Error(`${LABELS[type]}: أدخل أعدادًا صحيحة من 0 إلى ${rule.count}، بدون ماينس.`);
       if (counts.reduce((sum, n) => sum + n, 0) !== rule.count)
         throw new Error(`${LABELS[type]}: لازم مجموع العدد يكون ${rule.count}.`);
-      return counts.map(n => n === 0 ? 0 : n * rule.unit);
+      return counts.map(n => n === 0 ? 0 : n * rule.unit * direction);
     }
     if (type === 'king') {
       if (!PLAYER_IDS.includes(data.taker)) throw new Error('الباش: اختَر منو أكلها.');
       if (typeof data.declared !== 'boolean') throw new Error('الباش: حدّد إذا كانت معلنة.');
       if (data.declared && !PLAYER_IDS.includes(data.declarer)) throw new Error('الباش المعلن: اختَر منو أعلنها.');
       const scores = [0, 0, 0, 0];
-      scores[PLAYER_IDS.indexOf(data.taker)] -= data.declared ? 150 : 75;
-      if (data.declared) scores[PLAYER_IDS.indexOf(data.declarer)] += 75;
-      return scores;
+      scores[PLAYER_IDS.indexOf(data.taker)] += data.declared ? 150 : 75;
+      if (data.declared) scores[PLAYER_IDS.indexOf(data.declarer)] -= 75;
+      return scores.map(n => n === 0 ? 0 : n * direction);
     }
     if (!Array.isArray(data.ranks) || data.ranks.length !== 4 ||
       data.ranks.some(rank => ![1, 2, 3, 4].includes(rank)) || new Set(data.ranks).size !== 4)
       throw new Error('التركس: وزّع المراكز من الأول للرابع، كل مركز للاعب واحد.');
-    return data.ranks.map(rank => RANK_POINTS[rank - 1]);
+    return data.ranks.map(rank => RANK_POINTS[rank - 1] * direction);
   }
   function typesError(state) {
     if (completed(state)) return 'اكتملت الممالك الأربع.';
@@ -115,12 +121,12 @@
   }
   function validateDraft(state) {
     const error = typesError(state); if (error) return error;
-    try { for (const type of draftTypes(state)) scoreComponent(type, state.draft.data[type]); return null; }
+    try { for (const type of draftTypes(state)) scoreComponent(type, state.draft.data[type], convention(state)); return null; }
     catch (error) { return error.message; }
   }
   function preview(state) {
     if (validateDraft(state)) return null;
-    return draftTypes(state).reduce((scores, type) => scoreComponent(type, state.draft.data[type])
+    return draftTypes(state).reduce((scores, type) => scoreComponent(type, state.draft.data[type], convention(state))
       .map((value, i) => scores[i] + value), [0, 0, 0, 0]);
   }
   function record(state, timestamp = Date.now()) {
@@ -136,16 +142,17 @@
   }
   function componentRound(state, kingdom, type) { return state.rounds.find(round => round.kingdom === kingdom && round.types.includes(type)) || null; }
   function componentScores(state, kingdom, type) {
-    const round = componentRound(state, kingdom, type); return round ? scoreComponent(type, round.data[type]) : null;
+    const round = componentRound(state, kingdom, type); return round ? scoreComponent(type, round.data[type], convention(state)) : null;
   }
-  function addRound(scores, round) {
-    return round.types.reduce((sum, type) => scoreComponent(type, round.data[type]).map((n, i) => sum[i] + n), scores);
+  function addRound(scores, round, scoring) {
+    return round.types.reduce((sum, type) => scoreComponent(type, round.data[type], scoring).map((n, i) => sum[i] + n), scores);
   }
-  function totals(state) { return state.rounds.reduce(addRound, [0, 0, 0, 0]); }
-  function kingdomScores(state, kingdom) { return state.rounds.filter(round => round.kingdom === kingdom).reduce(addRound, [0, 0, 0, 0]); }
+  function totals(state) { return state.rounds.reduce((sum, round) => addRound(sum, round, convention(state)), [0, 0, 0, 0]); }
+  function kingdomScores(state, kingdom) { return state.rounds.filter(round => round.kingdom === kingdom).reduce((sum, round) => addRound(sum, round, convention(state)), [0, 0, 0, 0]); }
+  function bestScore(state, scores = totals(state)) { return lowerWins(state) ? Math.min(...scores) : Math.max(...scores); }
   function leaders(state) {
     if (!completed(state)) return [];
-    const scores = totals(state), highest = Math.max(...scores);
+    const scores = totals(state), highest = bestScore(state, scores);
     return state.players.filter((_player, i) => scores[i] === highest);
   }
   function undo(state) {
@@ -168,7 +175,11 @@
       state.players.some((player, i) => player.id !== PLAYER_IDS[i] || typeof player.name !== 'string' || !player.name.trim() || player.name.length > 32) ||
       !Array.isArray(state.rounds) || state.rounds.length > 20 || !state.draft)
       throw new Error('حفظ التركس غير صالح');
-    let check = { ...initialState(), players: state.players };
+    if (state.scoring !== undefined && !['low-wins', 'legacy-high'].includes(state.scoring))
+      throw new Error('حسبة التركس المحفوظة غير صالحة');
+    // Empty old saves can adopt the new rules; recorded/in-progress games cannot.
+    const scoring = state.scoring ?? (state.rounds.length || state.draft.selection !== null ? 'legacy-high' : 'low-wins');
+    let check = { ...initialState(), players: state.players, scoring };
     for (const round of state.rounds) {
       if (!round || round.kingdom !== currentKingdom(check) || !Number.isFinite(round.timestamp) ||
         !Array.isArray(round.types) || !round.data) throw new Error('سجل الممالك غير صالح');
@@ -198,7 +209,7 @@
     return { ...check, draft: copy(d) };
   }
   const api = { STORAGE_KEY, PLAYER_IDS, TYPES, NEGATIVE, LABELS, COUNTERS, RANK_POINTS, readCount,
-    initialState, blankData, used, currentKingdom, completed, remaining, draftTypes, hasDraft, select,
+    lowerWins, points, bestScore, initialState, blankData, used, currentKingdom, completed, remaining, draftTypes, hasDraft, select,
     clearSelection, toggleComponent, startComplex, setData, setRank, scoreComponent, validateDraft, preview,
     record, componentRound, componentScores, totals, kingdomScores, leaders, undo, rename, newGame, restore };
   root.TrixScore = api;

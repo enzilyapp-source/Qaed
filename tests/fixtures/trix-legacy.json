@@ -1,0 +1,415 @@
+{
+  "version": 1,
+  "players": [
+    {
+      "id": "p1",
+      "name": "اللاعب الأول"
+    },
+    {
+      "id": "p2",
+      "name": "اللاعب الثاني"
+    },
+    {
+      "id": "p3",
+      "name": "اللاعب الثالث"
+    },
+    {
+      "id": "p4",
+      "name": "اللاعب الرابع"
+    }
+  ],
+  "rounds": [
+    {
+      "kingdom": 0,
+      "selection": "tricks",
+      "types": [
+        "tricks"
+      ],
+      "data": {
+        "tricks": {
+          "counts": [
+            4,
+            3,
+            3,
+            3
+          ]
+        }
+      },
+      "timestamp": 1
+    },
+    {
+      "kingdom": 0,
+      "selection": "diamonds",
+      "types": [
+        "diamonds"
+      ],
+      "data": {
+        "diamonds": {
+          "counts": [
+            4,
+            3,
+            3,
+            3
+          ]
+        }
+      },
+      "timestamp": 1
+    },
+    {
+      "kingdom": 0,
+      "selection": "queens",
+      "types": [
+        "queens"
+      ],
+      "data": {
+        "queens": {
+          "counts": [
+            1,
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "timestamp": 1
+    },
+    {
+      "kingdom": 0,
+      "selection": "king",
+      "types": [
+        "king"
+      ],
+      "data": {
+        "king": {
+          "taker": "p4",
+          "declared": false,
+          "declarer": null
+        }
+      },
+      "timestamp": 1
+    },
+    {
+      "kingdom": 0,
+      "selection": "trix",
+      "types": [
+        "trix"
+      ],
+      "data": {
+        "trix": {
+          "ranks": [
+            1,
+            2,
+            3,
+            4
+          ]
+        }
+      },
+      "timestamp": 1
+    },
+    {
+      "kingdom": 1,
+      "selection": "tricks",
+      "types": [
+        "tricks"
+      ],
+      "data": {
+        "tricks": {
+          "counts": [
+            4,
+            3,
+            3,
+            3
+          ]
+        }
+      },
+      "timestamp": 1
+    },
+    {
+      "kingdom": 1,
+      "selection": "diamonds",
+      "types": [
+        "diamonds"
+      ],
+      "data": {
+        "diamonds": {
+          "counts": [
+            4,
+            3,
+            3,
+            3
+          ]
+        }
+      },
+      "timestamp": 1
+    },
+    {
+      "kingdom": 1,
+      "selection": "queens",
+      "types": [
+        "queens"
+      ],
+      "data": {
+        "queens": {
+          "counts": [
+            1,
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "timestamp": 1
+    },
+    {
+      "kingdom": 1,
+      "selection": "king",
+      "types": [
+        "king"
+      ],
+      "data": {
+        "king": {
+          "taker": "p4",
+          "declared": false,
+          "declarer": null
+        }
+      },
+      "timestamp": 1
+    },
+    {
+      "kingdom": 1,
+      "selection": "trix",
+      "types": [
+        "trix"
+      ],
+      "data": {
+        "trix": {
+          "ranks": [
+            1,
+            2,
+            3,
+            4
+          ]
+        }
+      },
+      "timestamp": 1
+    },
+    {
+      "kingdom": 2,
+      "selection": "tricks",
+      "types": [
+        "tricks"
+      ],
+      "data": {
+        "tricks": {
+          "counts": [
+            4,
+            3,
+            3,
+            3
+          ]
+        }
+      },
+      "timestamp": 1
+    },
+    {
+      "kingdom": 2,
+      "selection": "diamonds",
+      "types": [
+        "diamonds"
+      ],
+      "data": {
+        "diamonds": {
+          "counts": [
+            4,
+            3,
+            3,
+            3
+          ]
+        }
+      },
+      "timestamp": 1
+    },
+    {
+      "kingdom": 2,
+      "selection": "queens",
+      "types": [
+        "queens"
+      ],
+      "data": {
+        "queens": {
+          "counts": [
+            1,
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "timestamp": 1
+    },
+    {
+      "kingdom": 2,
+      "selection": "king",
+      "types": [
+        "king"
+      ],
+      "data": {
+        "king": {
+          "taker": "p4",
+          "declared": false,
+          "declarer": null
+        }
+      },
+      "timestamp": 1
+    },
+    {
+      "kingdom": 2,
+      "selection": "trix",
+      "types": [
+        "trix"
+      ],
+      "data": {
+        "trix": {
+          "ranks": [
+            1,
+            2,
+            3,
+            4
+          ]
+        }
+      },
+      "timestamp": 1
+    },
+    {
+      "kingdom": 3,
+      "selection": "tricks",
+      "types": [
+        "tricks"
+      ],
+      "data": {
+        "tricks": {
+          "counts": [
+            4,
+            3,
+            3,
+            3
+          ]
+        }
+      },
+      "timestamp": 1
+    },
+    {
+      "kingdom": 3,
+      "selection": "diamonds",
+      "types": [
+        "diamonds"
+      ],
+      "data": {
+        "diamonds": {
+          "counts": [
+            4,
+            3,
+            3,
+            3
+          ]
+        }
+      },
+      "timestamp": 1
+    },
+    {
+      "kingdom": 3,
+      "selection": "queens",
+      "types": [
+        "queens"
+      ],
+      "data": {
+        "queens": {
+          "counts": [
+            1,
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "timestamp": 1
+    },
+    {
+      "kingdom": 3,
+      "selection": "king",
+      "types": [
+        "king"
+      ],
+      "data": {
+        "king": {
+          "taker": "p4",
+          "declared": false,
+          "declarer": null
+        }
+      },
+      "timestamp": 1
+    },
+    {
+      "kingdom": 3,
+      "selection": "trix",
+      "types": [
+        "trix"
+      ],
+      "data": {
+        "trix": {
+          "ranks": [
+            1,
+            2,
+            3,
+            4
+          ]
+        }
+      },
+      "timestamp": 1
+    }
+  ],
+  "draft": {
+    "selection": null,
+    "components": [],
+    "complexStarted": false,
+    "data": {
+      "tricks": {
+        "counts": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "diamonds": {
+        "counts": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "queens": {
+        "counts": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "king": {
+        "taker": null,
+        "declared": false,
+        "declarer": null
+      },
+      "trix": {
+        "ranks": [
+          null,
+          null,
+          null,
+          null
+        ]
+      }
+    }
+  }
+}

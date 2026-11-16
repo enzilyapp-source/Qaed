@@ -21,38 +21,38 @@ test('four fixed players have four independent kingdoms, with all five contracts
   const state = T.initialState(); assert.equal(state.players.length, 4); assert.equal(T.currentKingdom(state), 0);
   for (let i = 0; i < 4; i++) assert.deepEqual(T.remaining(state, i), ['tricks', 'diamonds', 'queens', 'king', 'trix']);
 });
-test('tricks require exactly thirteen nonnegative integer counts and score -15 each', () => {
-  assert.deepEqual(T.scoreComponent('tricks', { counts: [13, 0, 0, 0] }), [-195, 0, 0, 0]);
-  assert.deepEqual(T.scoreComponent('tricks', { counts: ['٤', '٣', '۳', '3'] }), [-60, -45, -45, -45]);
+test('tricks require exactly thirteen nonnegative integer counts and score +15 each', () => {
+  assert.deepEqual(T.scoreComponent('tricks', { counts: [13, 0, 0, 0] }), [195, 0, 0, 0]);
+  assert.deepEqual(T.scoreComponent('tricks', { counts: ['٤', '٣', '۳', '3'] }), [60, 45, 45, 45]);
   for (const counts of [[3, 3, 3, 3], [4, 4, 3, 3], [-1, 7, 7, 0], [1.5, 4.5, 3, 4], ['', 13, 0, 0], [13, 0, 0]])
     assert.throws(() => T.scoreComponent('tricks', { counts }));
 });
-test('diamonds require thirteen and score -10 each', () => {
-  assert.deepEqual(T.scoreComponent('diamonds', { counts: [2, 3, 4, 4] }), [-20, -30, -40, -40]);
+test('diamonds require thirteen and score +10 each', () => {
+  assert.deepEqual(T.scoreComponent('diamonds', { counts: [2, 3, 4, 4] }), [20, 30, 40, 40]);
   assert.throws(() => T.scoreComponent('diamonds', { counts: [2, 3, 3, 4] }));
 });
-test('four queens total -100 and each scores -25', () => {
-  assert.deepEqual(T.scoreComponent('queens', { counts: [0, 2, 1, 1] }), [0, -50, -25, -25]);
-  assert.deepEqual(T.scoreComponent('queens', { counts: [4, 0, 0, 0] }), [-100, 0, 0, 0]);
+test('four queens total +100 and each scores +25', () => {
+  assert.deepEqual(T.scoreComponent('queens', { counts: [0, 2, 1, 1] }), [0, 50, 25, 25]);
+  assert.deepEqual(T.scoreComponent('queens', { counts: [4, 0, 0, 0] }), [100, 0, 0, 0]);
   assert.throws(() => T.scoreComponent('queens', { counts: [1, 1, 1, 0] }));
   assert.throws(() => T.scoreComponent('queens', { counts: [2, 1, 1, 1] }));
 });
 for (const taker of T.PLAYER_IDS) {
-  test(`undeclared king: only ${taker} loses 75`, () => {
+  test(`undeclared king: only ${taker} receives +75`, () => {
     const scores = T.scoreComponent('king', { taker, declared: false, declarer: 'p1' });
-    assert.equal(scores[T.PLAYER_IDS.indexOf(taker)], -75); assert.equal(scores.reduce((a, b) => a + b, 0), -75);
+    assert.equal(scores[T.PLAYER_IDS.indexOf(taker)], 75); assert.equal(scores.reduce((a, b) => a + b, 0), 75);
   });
 }
-test('declared king subtracts 150 from the taker and adds 75 to announcer', () => {
-  assert.deepEqual(T.scoreComponent('king', { taker: 'p2', declared: true, declarer: 'p1' }), [75, -150, 0, 0]);
+test('declared king adds 150 to taker and subtracts 75 from announcer', () => {
+  assert.deepEqual(T.scoreComponent('king', { taker: 'p2', declared: true, declarer: 'p1' }), [-75, 150, 0, 0]);
   assert.throws(() => T.scoreComponent('king', { taker: 'p2', declared: true, declarer: null }));
   assert.throws(() => T.scoreComponent('king', { taker: null, declared: false, declarer: null }));
 });
-test('a declared king taken by its announcer combines both operations to net -75', () => {
-  assert.deepEqual(T.scoreComponent('king', { taker: 'p3', declared: true, declarer: 'p3' }), [0, 0, -75, 0]);
+test('a declared king taken by its announcer combines both operations to net +75', () => {
+  assert.deepEqual(T.scoreComponent('king', { taker: 'p3', declared: true, declarer: 'p3' }), [0, 0, 75, 0]);
 });
-test('trix ranks are unique 1–4 and award 200/150/100/50', () => {
-  assert.deepEqual(T.scoreComponent('trix', { ranks: [3, 4, 2, 1] }), [100, 50, 150, 200]);
+test('trix ranks are unique 1–4 and award -200/-150/-100/-50', () => {
+  assert.deepEqual(T.scoreComponent('trix', { ranks: [3, 4, 2, 1] }), [-100, -50, -150, -200]);
   for (const ranks of [[1, 1, 3, 4], [1, 2, 3, null], [0, 1, 2, 3], [1, 2, 3], [1, 2, 3, 5]])
     assert.throws(() => T.scoreComponent('trix', { ranks }));
 });
@@ -65,7 +65,7 @@ test('rank UI helper swaps used places instead of creating duplicate ranks', () 
 test('counter edits and complete previews never consume a contract before record', () => {
   const original = T.initialState();
   const draft = T.setData(T.select(original, 'tricks'), 'tricks', data('tricks'));
-  assert.deepEqual(T.preview(draft), [-60, -45, -45, -45]);
+  assert.deepEqual(T.preview(draft), [60, 45, 45, 45]);
   assert.equal(draft.rounds.length, 0); assert.deepEqual(T.totals(draft), [0, 0, 0, 0]);
   assert.equal(T.used(draft, 0).length, 0); assert.equal(original.draft.selection, null);
   const saved = T.record(draft); assert.deepEqual(T.used(saved, 0), ['tricks']);
@@ -111,15 +111,15 @@ test('two separate complexes can consume the remaining negative games in a kingd
   assert.deepEqual(T.remaining(state), ['trix']); assert.throws(() => T.select(state, 'complex'));
   state = single(state, 'trix'); assert.equal(T.currentKingdom(state), 1); assert.equal(T.remaining(state).length, 5);
 });
-test('complete four kingdoms use twenty independent contracts and highest total wins', () => {
+test('complete four kingdoms use twenty independent contracts and lowest total wins', () => {
   let state = T.initialState();
   for (let kingdom = 0; kingdom < 4; kingdom++) {
     assert.equal(T.currentKingdom(state), kingdom);
     for (const type of T.TYPES) state = single(state, type);
-    assert.deepEqual(T.kingdomScores(state, kingdom), [75, 50, 0, -125]);
+    assert.deepEqual(T.kingdomScores(state, kingdom), [-75, -50, 0, 125]);
   }
   assert(T.completed(state)); assert.equal(state.rounds.length, 20);
-  assert.deepEqual(T.totals(state), [300, 200, 0, -500]); assert.equal(T.leaders(state)[0].id, 'p1');
+  assert.deepEqual(T.totals(state), [-300, -200, 0, 500]); assert.equal(T.leaders(state)[0].id, 'p1');
   assert.throws(() => T.select(state, 'trix')); assert.throws(() => T.record(state));
 });
 test('equal final totals return all tied winners', () => {
@@ -162,4 +162,28 @@ test('new game preserves four names and resets every kingdom', () => {
   const state = single(T.rename(T.initialState(), ['علي', 'سالم', 'خالد', 'محمد']), 'king');
   const reset = T.newGame(state); assert.equal(reset.players[0].name, 'علي');
   assert.equal(reset.rounds.length, 0); assert.equal(T.currentKingdom(reset), 0); assert.equal(reset.players.length, 4);
+});
+
+test('legacy saved kingdoms keep their scores, winner, and undo draft until a new game', () => {
+  const legacy = require('./fixtures/trix-legacy.json');
+  const saved = JSON.stringify(legacy), restored = T.restore(saved);
+  assert.equal(restored.scoring, 'legacy-high');
+  assert.deepEqual(T.totals(restored), [300, 200, 0, -500]);
+  assert.equal(T.leaders(restored)[0].id, 'p1');
+  const draft = T.undo(restored);
+  assert.deepEqual(T.preview(draft), [200, 150, 100, 50]);
+  assert.deepEqual(T.totals(T.record(draft)), [300, 200, 0, -500]);
+  const fresh = T.newGame(restored);
+  assert.equal(fresh.scoring, 'low-wins');
+  assert.deepEqual(T.preview(T.setData(T.select(fresh, 'trix'), 'trix', data('trix'))), [-200, -150, -100, -50]);
+  assert.equal(JSON.stringify(legacy), saved);
+});
+test('unrecorded legacy drafts keep their scoring but empty old saves start with the new convention', () => {
+  const legacy = structuredClone(require('./fixtures/trix-legacy.json'));
+  legacy.rounds = []; legacy.draft.selection = 'king'; legacy.draft.data.king = data('king');
+  const restored = T.restore(JSON.stringify(legacy));
+  assert.equal(restored.scoring, 'legacy-high'); assert.deepEqual(T.preview(restored), [0, 0, 0, -75]);
+  legacy.draft = T.initialState().draft;
+  assert.equal(T.restore(JSON.stringify(legacy)).scoring, 'low-wins');
+  legacy.scoring = 'unknown'; assert.throws(() => T.restore(JSON.stringify(legacy)));
 });

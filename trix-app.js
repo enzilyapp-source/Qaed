@@ -24,6 +24,21 @@
   catch { storageBlocked = true; warn('تعذر قراءة حفظ التركس. ما حذفنا السجل السابق؛ تقدر تستخدم الصفحة بهالجلسة بدون حفظ تلقائي.'); }
   viewed = Math.min(T.currentKingdom(state), 3);
   function commitDraft(next) { state = next; persist(); renderStatus(); feedback(''); }
+  // Local display preference, outside the shared ledger: viewers may toggle it too.
+  const historyKey = 'qaed.trix.history-hidden.v1';
+  let historyHidden = false;
+  try { historyHidden = localStorage.getItem(historyKey) === 'true'; } catch (_) {}
+  function renderHistoryVisibility() {
+    $('trix-history').hidden = historyHidden;
+    const toggle = $('trix-history-toggle');
+    toggle.textContent = historyHidden ? 'إظهار السجل' : 'إخفاء السجل';
+    toggle.setAttribute('aria-expanded', String(!historyHidden));
+  }
+  $('trix-history-toggle').addEventListener('click', () => {
+    historyHidden = !historyHidden;
+    try { localStorage.setItem(historyKey, String(historyHidden)); } catch (_) {}
+    renderHistoryVisibility();
+  });
   function renderBoard() {
     const active = T.currentKingdom(state), allDone = T.completed(state), used = T.used(state, viewed);
     $('trix-title').textContent = `المملكة ${ORDINALS[viewed]}`;
@@ -60,9 +75,10 @@
     if (allDone) {
       const leaders = T.leaders(state), scores = T.totals(state);
       $('trix-winner-name').textContent = leaders.length > 1 ? `تعادل: ${leaders.map(p => p.name).join(' و')}` : `الفائز: ${leaders[0].name}`;
-      $('trix-winner-detail').textContent = `أعلى مجموع: ${format(Math.max(...scores))} نقطة بعد اكتمال ألعاب الممالك الأربع.`;
+      $('trix-winner-detail').textContent = `${T.lowerWins(state) ? 'أقل' : 'أعلى'} مجموع: ${format(T.bestScore(state, scores))} نقطة بعد اكتمال ألعاب الممالك الأربع.`;
     }
-    renderTable(); renderLedger();
+    renderTable(); renderLedger(); renderHistoryVisibility();
+    $('trix-rules').textContent = rulesText();
   }
   function renderTable() {
     $('trix-table-head').replaceChildren(); $('trix-table-body').replaceChildren(); $('trix-table-foot').replaceChildren();
@@ -89,7 +105,7 @@
     $('trix-ledger').replaceChildren();
     for (const round of state.rounds) {
       const li = node('li', '', `${state.players[round.kingdom].name} · ${round.selection === 'complex' ? 'كومبلكس: ' : ''}${round.types.map(t => T.LABELS[t]).join(' + ')}`);
-      const total = round.types.reduce((sum, type) => T.scoreComponent(type, round.data[type]).map((n, i) => sum[i] + n), [0, 0, 0, 0]);
+      const total = round.types.reduce((sum, type) => T.scoreComponent(type, round.data[type], state.scoring).map((n, i) => sum[i] + n), [0, 0, 0, 0]);
       const line = node('span'); state.players.forEach((player, i) => {
         line.append(document.createTextNode(`${i ? ' · ' : ''}${player.name}: `), node('bdi', '', format(total[i])));
       }); li.append(line); $('trix-ledger').append(li);
@@ -97,7 +113,7 @@
     if (!state.rounds.length) $('trix-ledger').append(node('li', '', 'ما فيه تسجيلات بعد.'));
   }
   function counterForm(type, section) {
-    const rule = T.COUNTERS[type]; counterRefs[type] = { rows: [], total: node('strong', 'trix-count-total') };
+    const rule = { ...T.COUNTERS[type], unit: T.points(state, T.COUNTERS[type].unit) }; counterRefs[type] = { rows: [], total: node('strong', 'trix-count-total') };
     section.append(node('p', 'hint', `أدخل العدد لكل لاعب، بدون ماينس. المطلوب ${rule.count}؛ كل وحدة ${rule.unit} نقطة.`));
     state.players.forEach((player, index) => {
       const row = node('div', 'trix-count-row'), info = node('div', 'trix-count-person');
@@ -125,7 +141,7 @@
     section.append(counterRefs[type].total);
   }
   function kingForm(section) {
-    section.append(node('p', 'hint', 'غير معلنة: −75 للي أكلها. معلنة: −150 للي أكلها و+75 للي أعلنها.'));
+    section.append(node('p', 'hint', `غير معلنة: ${format(T.points(state, 75))} للي أكلها. معلنة: ${format(T.points(state, 150))} للي أكلها و${format(T.points(state, -75))} للي أعلنها.`));
     section.append(node('p', '', 'منو أكلها؟'));
     const takers = node('div', 'trix-person-options'); kingRefs = { takerButtons: [], declarerButtons: [] };
     state.players.forEach(player => {
@@ -145,7 +161,7 @@
     }); announcer.append(choices); section.append(announcer); kingRefs.announcer = announcer;
   }
   function ranksForm(section) {
-    section.append(node('p', 'hint', 'الأول 200، الثاني 150، الثالث 100، الرابع 50. كل مركز للاعب واحد؛ اختيار مركز مستخدم يبدّل المركزين.'));
+    section.append(node('p', 'hint', `الأول ${format(T.points(state, -200))}، الثاني ${format(T.points(state, -150))}، الثالث ${format(T.points(state, -100))}، الرابع ${format(T.points(state, -50))}. كل مركز للاعب واحد؛ اختيار مركز مستخدم يبدّل المركزين.`));
     state.players.forEach((player, index) => {
       const row = node('div', 'trix-rank-row'); row.append(node('label', '', player.name));
       const options = node('div', 'trix-ranks'); options.setAttribute('role', 'group'); options.setAttribute('aria-label', `ترتيب ${player.name}`);
@@ -153,7 +169,7 @@
       for (let rank = 1; rank <= 4; rank++) {
         const b = button(String(rank), () => commitDraft(T.setRank(state, index, rank)));
         b.id = `trix-rank-${index}-${rank}`; b.setAttribute('aria-pressed', 'false');
-        b.append(node('small', '', `${T.RANK_POINTS[rank - 1]} نقطة`)); options.append(b); buttons.push(b);
+        b.append(node('small', '', `${format(T.points(state, T.RANK_POINTS[rank - 1]))} نقطة`)); options.append(b); buttons.push(b);
       } row.append(options); section.append(row); rankRefs.push(buttons);
     });
   }
@@ -185,7 +201,7 @@
   }
   function renderStatus() {
     for (const [type, refs] of Object.entries(counterRefs)) {
-      const counts = state.draft.data[type].counts.map(T.readCount), rule = T.COUNTERS[type];
+      const counts = state.draft.data[type].counts.map(T.readCount), rule = { ...T.COUNTERS[type], unit: T.points(state, T.COUNTERS[type].unit) };
       const valid = counts.every(n => n !== null && n >= 0 && n <= rule.count), sum = counts.reduce((n, x) => n + (x ?? 0), 0);
       refs.rows.forEach((row, i) => {
         row.input.value = String(state.draft.data[type].counts[i]);
@@ -213,6 +229,11 @@
     if (scores) state.players.forEach((player, i) => {
       const col = node('div'); col.append(node('span', '', player.name), node('bdi', '', format(scores[i]))); $('trix-preview').append(col);
     });
+  }
+  function rulesText() {
+    const p = value => format(T.points(state, value));
+    return (T.lowerWins(state) ? '' : 'هالقيد محفوظ بالحسبة السابقة؛ الحسبة الجديدة تبدأ مع لعبة جديدة. ')
+      + `الأكلات: 13 أكلة، كل وحدة ${p(15)}. الديامن: 13 ورقة، كل وحدة ${p(10)}. الميمات: أربع، كل وحدة ${p(25)} ومجموعها ${p(100)}. الباش غير المعلن ${p(75)} للي أكله؛ المعلن ${p(150)} للي أكله و${p(-75)} للي أعلنه. ترتيب التركس: ${T.RANK_POINTS.map(p).join('، ')}. الكومبلكس يجمع نقاط الأنواع المختارة ويغلقها بعد التسجيل. ${T.lowerWins(state) ? 'الأقل' : 'الأعلى'} مجموعًا يفوز بعد الممالك الأربع.`;
   }
   function render() { renderBoard(); renderForms(); renderStatus(); }
   $('trix-complex-start').addEventListener('click', () => {
